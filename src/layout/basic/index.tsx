@@ -1,52 +1,51 @@
 import { useState } from "react";
-import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
+
+const links = [
+  {
+    name: "首页",
+    to: "/",
+  },
+  {
+    name: "正则测试",
+    to: "/regexp",
+  },
+  {
+    name: "Dayjs 测试",
+    to: "/dayjs",
+  },
+  {
+    name: "JavaScript 测试",
+    to: "/repl",
+  },
+];
 
 const BasicLayout = () => {
-  const [keyword, setKeyword] = useState("");
   const navigate = useNavigate();
   const location = useLocation();
 
   // console.log(location);
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
-      <div
-        data-tauri-drag-region
-        className="titlebar relative flex justify-between py-4 px-6"
-      >
-        <div>
-          {location.pathname !== "/" && (
-            <div
-              className="absolute left-4 bottom-2 text-white cursor-pointer"
-              onClick={() => {
-                navigate(-1);
-              }}
-            >
-              Back
-            </div>
-          )}
+    <div className="flex flex-col h-full p-8 overflow-hidden">
+      <div className="relative flex justify-between h-full">
+        <div className="h-full py-4 px-6 bg-gray-100 space-y-4">
+          {links.map((link) => {
+            const { name, to } = link;
+            return (
+              <Link
+                key={to}
+                className="block py-2 px-4 text-gray-800 rounded cursor-pointer no-underline"
+                to={to}
+              >
+                {name}
+              </Link>
+            );
+          })}
         </div>
-        <div className="py-1 px-4 overflow-hidden rounded-2xl bg-white">
-          <input
-            className="outline-0"
-            placeholder="输入关键字搜索"
-            value={keyword}
-            onChange={(event) => {
-              setKeyword(event.target.value);
-            }}
-          />
-          <button
-            className="ml-2"
-            onClick={() => {
-              // console.log("[]search", keyword);
-            }}
-          >
-            搜索
-          </button>
+        <div className="flex-1 w-full ml-8 overflow-auto">
+          <Outlet />
         </div>
-      </div>
-      <div className="flex-1 w-full overflow-auto">
-        <Outlet />
       </div>
     </div>
   );

@@ -424,6 +424,11 @@ csstype@^3.0.2:
   resolved "https://registry.npmmirror.com/csstype/-/csstype-3.0.11.tgz#d66700c5eacfac1940deb4e3ee5642792d85cd33"
   integrity sha512-sa6P2wJ+CAbgyy4KFssIb/JNMLxFvKF1pCYCSXS8ZMuqZnMsrxqI2E5sPyoTpxoPU/gVZMzr2zjOfg8GIZOMsw==
 
+dayjs@^1.11.0:
+  version "1.11.0"
+  resolved "https://registry.npmmirror.com/dayjs/-/dayjs-1.11.0.tgz#009bf7ef2e2ea2d5db2e6583d2d39a4b5061e805"
+  integrity sha512-JLC809s6Y948/FuCZPm5IX8rRhQwOiyMb2TfVVQEixG7P8Lm/gt5S7yoQZmC8x1UehI9Pb7sksEt4xx14m+7Ug==
+
 debug@^4.1.0, debug@^4.3.4:
   version "4.3.4"
   resolved "https://registry.npmmirror.com/debug/-/debug-4.3.4.tgz#1319f6579357f2338d3337d2cdd4914bb5dcc865"
@@ -723,6 +728,16 @@ micromatch@^4.0.4, micromatch@^4.0.5:
   dependencies:
     braces "^3.0.2"
     picomatch "^2.3.1"
+
+monaco-editor@^0.33.0:
+  version "0.33.0"
+  resolved "https://registry.npmmirror.com/monaco-editor/-/monaco-editor-0.33.0.tgz#842e244f3750a2482f8a29c676b5684e75ff34af"
+  integrity sha512-VcRWPSLIUEgQJQIE0pVT8FcGBIgFoxz7jtqctE+IiCxWugD0DwgyQBcZBhdSrdMC84eumoqMZsGl2GTreOzwqw==
+
+monaco-vim@^0.3.4:
+  version "0.3.4"
+  resolved "https://registry.npmmirror.com/monaco-vim/-/monaco-vim-0.3.4.tgz#141d3e1129a563e63a7286a1472ccfe72b758abe"
+  integrity sha512-IVogmrQ6fRwW2PD9XRHFysOZBFj8qcRhgabu7GlGiNR14ApKMHz3pYOL1hDq1ctVPj1DS6hZd98vZrFxWr5d6A==
 
 ms@2.1.2:
   version "2.1.2"
