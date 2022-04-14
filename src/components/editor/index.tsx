@@ -141,6 +141,7 @@ const Editor: React.FC<IEditorProps> = (props) => {
               }
               settings("vim", false);
               if (vimModeRef.current) {
+                // @ts-ignore
                 vimModeRef.current.dispose();
               }
             }}
