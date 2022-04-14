@@ -1,6 +1,6 @@
 import React from "react";
 import ReactDOM from "react-dom";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { HashRouter, Routes, Route } from "react-router-dom";
 
 import BasicLayout from "@/layout/basic";
 import HomePage from "@/pages/home";
@@ -14,7 +14,7 @@ import "./global.css";
 
 ReactDOM.render(
   <React.StrictMode>
-    <BrowserRouter>
+    <HashRouter>
       <Routes>
         <Route path="/" element={<BasicLayout />}>
           <Route path="/" element={<HomePage />} />
@@ -24,7 +24,7 @@ ReactDOM.render(
           <Route path="/profile/:id" element={<ProfilePage />} />
         </Route>
       </Routes>
-    </BrowserRouter>
+    </HashRouter>
   </React.StrictMode>,
   document.getElementById("root")
 );
