@@ -3,14 +3,19 @@ import ReactDOM from "react-dom";
 import { HashRouter, Routes, Route } from "react-router-dom";
 
 import BasicLayout from "@/layout/basic";
+
 import HomePage from "@/pages/home";
-import ProfilePage from "@/pages/profile";
-import RegexpTestPage from "./pages/regexp";
-import DayjsTestPage from "./pages/dayjs";
-import ReplPage from "./pages/repl";
 
 import "virtual:windi.css";
 import "./global.css";
+
+const ProfilePage = React.lazy(() => import("@/pages/profile"));
+const RegexpTestPage = React.lazy(() => import("@/pages/regexp"));
+const DayjsTestPage = React.lazy(() => import("@/pages/dayjs"));
+const ReplPage = React.lazy(() => import("@/pages/repl"));
+const RegexpBuildPage = React.lazy(() => import("@/pages/build"));
+
+const loading = <div>Loading</div>;
 
 ReactDOM.render(
   <React.StrictMode>
@@ -18,10 +23,46 @@ ReactDOM.render(
       <Routes>
         <Route path="/" element={<BasicLayout />}>
           <Route path="/" element={<HomePage />} />
-          <Route path="/regexp" element={<RegexpTestPage />} />
-          <Route path="/dayjs" element={<DayjsTestPage />} />
-          <Route path="/repl" element={<ReplPage />} />
-          <Route path="/profile/:id" element={<ProfilePage />} />
+          <Route
+            path="/regexp"
+            element={
+              <React.Suspense fallback={loading}>
+                <RegexpTestPage />
+              </React.Suspense>
+            }
+          />
+          <Route
+            path="/dayjs"
+            element={
+              <React.Suspense fallback={loading}>
+                <DayjsTestPage />
+              </React.Suspense>
+            }
+          />
+          <Route
+            path="/repl"
+            element={
+              <React.Suspense fallback={loading}>
+                <ReplPage />
+              </React.Suspense>
+            }
+          />
+          <Route
+            path="/build"
+            element={
+              <React.Suspense fallback={loading}>
+                <RegexpBuildPage />
+              </React.Suspense>
+            }
+          />
+          <Route
+            path="/profile/:id"
+            element={
+              <React.Suspense fallback={loading}>
+                <ProfilePage />
+              </React.Suspense>
+            }
+          />
         </Route>
       </Routes>
     </HashRouter>
