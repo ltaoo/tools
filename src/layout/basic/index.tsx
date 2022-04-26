@@ -18,6 +18,10 @@ const links = [
     name: "JavaScript 测试",
     to: "/repl",
   },
+  {
+    name: "正则构建",
+    to: "/build",
+  },
 ];
 
 const BasicLayout = () => {

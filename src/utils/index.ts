@@ -66,3 +66,30 @@ export function generateFn(content: string) {
   const code = content.replace(/console\.log\(([^\)]*)\)/g, "records.push($1)");
   return new Function(code);
 }
+
+/**
+ * 复制字符串到剪贴板
+ * @param   {string}   text [复制内容]
+ * @returns {boolean}
+ */
+export function copy(text: string): boolean {
+  try {
+    const supported = document.queryCommandSupported("copy");
+    if (!supported) {
+      return false;
+    }
+    const input = document.createElement("textarea");
+    input.value = text;
+    input.style.cssText = "position: absolute; top: -10000px; left: -10000px;";
+    document.body.appendChild(input);
+
+    input.setAttribute("readonly", "");
+    input.select();
+    input.setSelectionRange(0, input.value.length);
+    document.execCommand("copy");
+    document.body.removeChild(input);
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
