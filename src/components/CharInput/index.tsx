@@ -7,6 +7,7 @@ export interface IMatchedOption {
   text: string;
   value?: string;
   or?: string;
+  not?: boolean;
 }
 export enum MatchedType {
   Digit,

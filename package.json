@@ -8,6 +8,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "classnames": "^2.3.1",
     "clipboard": "^2.0.10",
     "dayjs": "^1.11.0",
     "monaco-editor": "^0.33.0",
