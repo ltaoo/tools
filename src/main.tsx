@@ -10,10 +10,13 @@ import "virtual:windi.css";
 import "./global.css";
 
 const ProfilePage = React.lazy(() => import("@/pages/profile"));
-const RegexpTestPage = React.lazy(() => import("@/pages/regexp"));
 const DayjsTestPage = React.lazy(() => import("@/pages/dayjs"));
 const ReplPage = React.lazy(() => import("@/pages/repl"));
-const RegexpBuildPage = React.lazy(() => import("@/pages/build"));
+const RegexpTestPage = React.lazy(() => import("@/pages/regexp"));
+const RegexpChallengePage = React.lazy(
+  () => import("@/pages/regexp-challenge")
+);
+const RegexpBuildPage = React.lazy(() => import("@/pages/regexp-build"));
 
 const loading = <div>Loading</div>;
 
@@ -32,6 +35,22 @@ ReactDOM.render(
             }
           />
           <Route
+            path="/regexp-challenge"
+            element={
+              <React.Suspense fallback={loading}>
+                <RegexpChallengePage />
+              </React.Suspense>
+            }
+          />
+          <Route
+            path="/regexp-build"
+            element={
+              <React.Suspense fallback={loading}>
+                <RegexpBuildPage />
+              </React.Suspense>
+            }
+          />
+          <Route
             path="/dayjs"
             element={
               <React.Suspense fallback={loading}>
@@ -44,14 +63,6 @@ ReactDOM.render(
             element={
               <React.Suspense fallback={loading}>
                 <ReplPage />
-              </React.Suspense>
-            }
-          />
-          <Route
-            path="/build"
-            element={
-              <React.Suspense fallback={loading}>
-                <RegexpBuildPage />
               </React.Suspense>
             }
           />

@@ -11,16 +11,20 @@ const links = [
     to: "/regexp",
   },
   {
+    name: "正则构建",
+    to: "/regexp-build",
+  },
+  {
+    name: "正则挑战",
+    to: "/regexp-challenge",
+  },
+  {
     name: "Dayjs 测试",
     to: "/dayjs",
   },
   {
     name: "JavaScript 测试",
     to: "/repl",
-  },
-  {
-    name: "正则构建",
-    to: "/build",
   },
 ];
 
