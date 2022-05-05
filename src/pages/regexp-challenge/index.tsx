@@ -6,8 +6,13 @@ import cx from "classnames";
 
 import { questions } from "./constants";
 
-const QuestionCard: React.FC<{ input: string; expect: string[] }> = (props) => {
-  const { input, expect } = props;
+interface IQuestionCardProps {
+  intro?: string;
+  input: string;
+  expect: string[];
+}
+const QuestionCard: React.FC<IQuestionCardProps> = (props) => {
+  const { intro, input, expect } = props;
   const [regexp1, setRegexp1] = useState("");
   const [groups, setGroups] = useState([]);
   const [matches, setMatches] = useState("");
@@ -42,6 +47,7 @@ const QuestionCard: React.FC<{ input: string; expect: string[] }> = (props) => {
 
   return (
     <div>
+      <h2 className="text-gray-500">{intro}</h2>
       <p className="text-xl">
         <span className="text-gray-500">input:</span> {input}
       </p>
@@ -90,8 +96,7 @@ const RegexpChallengePage = () => {
       <h1 className="text-3xl font-bold">Regexp Challenge</h1>
       <div className="space-y-6">
         {questions.map((question, i) => {
-          const { input, expect } = question;
-          return <QuestionCard key={i} input={input} expect={expect} />;
+          return <QuestionCard key={i} {...question} />;
         })}
       </div>
     </div>
