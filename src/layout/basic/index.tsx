@@ -26,6 +26,10 @@ const links = [
     name: "JavaScript 测试",
     to: "/repl",
   },
+  {
+    name: "书源制作",
+    to: "/book-source",
+  },
 ];
 
 const BasicLayout = () => {
