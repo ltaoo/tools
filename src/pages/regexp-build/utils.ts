@@ -53,8 +53,8 @@ export interface IDescription {
  */
 export function buildPattern(description: IDescription) {
   const { num, chars } = description;
-  //   let result = chars.length === 1 ? "" : "[";
-  let result = "[";
+  let result = Number(num) === 1 ? "" : "[";
+  // let result = "[";
   // @ts-ignore
   if (chars[0].not) {
     result += "^";
@@ -70,7 +70,7 @@ export function buildPattern(description: IDescription) {
     } else if (id === MatchedType.LowerCase) {
       result += "a-z";
     } else if (id === MatchedType.Mark) {
-      result += "\\.\\*\\+\\+\\?\\(\\)\\[\\]\\{\\}_-/=!@#\\$%\\^&<>:;'\"~`";
+      result += "\\.\\*\\+\\?\\(\\)\\[\\]\\{\\}_-/=!@#\\$%\\^&<>:;'\"~`";
     } else if (id === MatchedType.Space) {
       result += "\\t \\v\\n\\r\\f";
     } else if (id === MatchedType.Special) {
@@ -91,21 +91,25 @@ export function buildPattern(description: IDescription) {
         return "";
       })();
     } else if (id === MatchedType.Any) {
-      result += ".";
+      result += "\\s\\S";
     } else if (id === MatchedType.Chinese) {
       result += "\\u4e00-\\u9fa5";
     }
   }
-  //   result += chars.length === 1 ? "" : "]";
-  result += "]";
+  result += Number(num) === 1 ? "" : "]";
+  // result += "]";
   if (num.length === 0) {
     return result;
   }
   if (num.length === 1) {
-    result += `{${num[0]}}`;
+    if (num[0] === 1) {
+      result += "";
+    } else {
+      result += `{${num[0]}}`;
+    }
   } else {
     if (num[1] === null) {
-      result += `{${num[0]},}`;
+      result += `{${num[0]},}?`;
     } else {
       result += `{${num[0]},${num[1]}}`;
     }
