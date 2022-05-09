@@ -22,6 +22,7 @@ export const questions = [
     expect: ["ab1c+a"],
     reference: "(?![\\s\\S]{1,}be)a[^a]{1,}a",
     // (?!a[^a]{0,}be)a[^a]{1,}a
+    // /a(?:(?<!(b(?=e)))[^a](?!(?<=b)e)){1,}?a/
   },
   {
     intro: "字符 a 跟着至少一个任意字符，且必须包含字符 b，再跟着字符 a",
@@ -65,7 +66,7 @@ export const questions = [
     intro:
       "字符串 <div> 后面跟着至少一个任意字符，且不能包含字符串 man，再跟着字符串 </div>",
     input:
-      "<div>helloworldwo</div><div>hellomanwo</div><div>hellosomethingwo</div>",
+      "<div>hello world wo</div><div>hello man wo</div><div>hello something wo</div>",
     expect: ["<div>helloworldwo</div>", "<div>hellosomethingwo</div>"],
     reference: "(?!<div>[^<div>]{0,}man)<div>[^<]{1,}</div>",
   },
