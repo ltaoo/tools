@@ -18,6 +18,7 @@ const RegexpChallengePage = React.lazy(
 );
 const RegexpBuildPage = React.lazy(() => import("@/pages/regexp-build"));
 const BookSourceBuildPage = React.lazy(() => import("@/pages/book-source"));
+const ImageCreatePage = React.lazy(() => import("@/pages/create-img"));
 
 const loading = <div>Loading</div>;
 
@@ -64,6 +65,14 @@ ReactDOM.render(
             element={
               <React.Suspense fallback={loading}>
                 <ReplPage />
+              </React.Suspense>
+            }
+          />
+          <Route
+            path="/img-create"
+            element={
+              <React.Suspense fallback={loading}>
+                <ImageCreatePage />
               </React.Suspense>
             }
           />

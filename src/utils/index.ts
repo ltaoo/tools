@@ -93,3 +93,37 @@ export function copy(text: string): boolean {
     return false;
   }
 }
+
+/**
+ * 下载图片
+ * @param url
+ * @param filename
+ */
+export function downloadImg(url: string, filename: string = "untitled.png") {
+  const img = new Image();
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+
+  img.onload = function () {
+    canvas.width = img.width;
+    canvas.height = img.height;
+    ctx?.drawImage(img, 0, 0);
+    var elt = document.createElement("a");
+    canvas.toBlob((blob) => {
+      if (blob) {
+        var blobUrl = window.URL.createObjectURL(blob);
+        elt.href = blobUrl;
+        elt.setAttribute("download", filename);
+        elt.style.display = "none";
+        document.body.appendChild(elt);
+        elt.click();
+        setTimeout(function () {
+          document.body.removeChild(elt);
+        }, 200);
+      }
+    });
+  };
+
+  img.crossOrigin = "anonymous";
+  img.src = url;
+}

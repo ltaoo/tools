@@ -1,11 +1,20 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, {
+  Dispatch,
+  SetStateAction,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 
+/**
+ * 简化 input onChange 的写法
+ */
 export function useValue<T>(
   defaultValue: T,
   options: {
     onChange?: (v: T) => void;
   } = {}
-): [value: T, binder: (v: any) => void] {
+): [value: T, binder: (v: any) => void, set: Dispatch<SetStateAction<T>>] {
   const { onChange } = options;
   const [value, setValue] = useState<T>(defaultValue);
 
@@ -27,7 +36,7 @@ export function useValue<T>(
     }
   });
 
-  return [value, bindRef.current];
+  return [value, bindRef.current, setValue];
 }
 
 export function useVisible(
