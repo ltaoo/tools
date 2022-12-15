@@ -24,20 +24,27 @@ function downloadImage(blob: Blob, name: string) {
 function createImageWithCanvasAndTargetSize(
   $canvas: HTMLCanvasElement,
   targetSize: number
-): Promise<Blob> {
+): Promise<[Blob | null, Error | null]> {
   return new Promise((resolve, reject) => {
     $canvas.toBlob((blob) => {
       if (blob === null) {
-        reject(new Error("$canvas create blob failed."));
+        reject([null, new Error("$canvas create blob failed.")]);
         return;
       }
       const { size } = blob;
       const target = targetSize;
       const remaining = target - size;
+      if (remaining < 0) {
+        reject([
+          null,
+          new Error("目标文件大小已小于该宽高下的最小图片大小，生成失败"),
+        ]);
+        return;
+      }
       const padding = createFileHasSpecialSize(remaining);
       blob.arrayBuffer().then((buf) => {
         const file = new Blob([buf, padding]);
-        resolve(file);
+        resolve([file, null]);
         // download(file);
       });
     });
@@ -138,7 +145,7 @@ const CreateImgPage = () => {
       unit,
       ext: type,
     });
-    const file = await createImageWithCanvasAndTargetSize(
+    const [file, error] = await createImageWithCanvasAndTargetSize(
       $canvas,
       (() => {
         if (unit.toLowerCase() === "mb") {
@@ -150,7 +157,11 @@ const CreateImgPage = () => {
         return 0;
       })()
     );
-    downloadImage(file, name);
+    if (error) {
+      alert(error.message);
+      return;
+    }
+    downloadImage(file!, name);
   }, [width, height, size, unit, type]);
 
   return (
