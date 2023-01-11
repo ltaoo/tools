@@ -94,11 +94,10 @@ function getDescription(ast: AstNode) {
     .concat(trailingComments)
     .map((comment) => {
       const { text } = comment;
-      const isMultiple = text[1] === "*";
-      if (!isMultiple) {
-        return text.replace(/\/\//, "").trim();
-      }
+      const c = extraContentFromComments(text);
+      return c;
     })
+    .filter(Boolean)
     .join("\n");
   return description;
 }
@@ -106,17 +105,109 @@ function getDescription(ast: AstNode) {
 /**
  * 从多行注释中提取注释
  */
-export function extraContentFromMultipleComments(comment) {
-  const regexp = /[^\*]{0,}[^\n]{1,}\n/gm;
-  const lines = comment.match(regexp);
-  console.log(lines);
-  return lines
-    .map((line) => {
-      const matched = line.match(/\*{0,}([^\*\n]{1,})\n/);
-      if (matched) {
-        return matched[1].trim();
+export function extraContentFromMultipleComments(comment: string) {
+  const result: string[] = [];
+
+  let i = 2;
+  let content = "";
+  let isNewLine = false;
+  while (i < comment.length) {
+    const s = comment[i];
+
+    if (s === "\n") {
+      isNewLine = true;
+      if (content) {
+        result.push(content);
+        content = "";
       }
-      return null;
-    })
-    .filter(Boolean);
+      i += 1;
+      continue;
+    }
+    if (s === "*") {
+      if (comment[i + 1] === "/") {
+        if (content) {
+          result.push(content);
+          content = "";
+        }
+        i += 2;
+      }
+      if (comment[i - 1] === "*") {
+        i += 1;
+        continue;
+      }
+      if (isNewLine) {
+        i += 1;
+        continue;
+      }
+    }
+    if (s === " ") {
+      if (isNewLine) {
+        i += 1;
+        continue;
+      }
+    }
+    isNewLine = false;
+    content += s;
+    i += 1;
+  }
+  // 开头存在空白 + 正文 或 结尾存在空白 + 正文 时，提取到的正文会包含空格，上面不好处理，所以这里额外处理下
+  return result.map((line) => {
+    return line.trim();
+  });
+}
+
+/**
+ * 从单行注释提取正文
+ */
+export function extraContentFromSingleComments(comment: string) {
+  let i = 0;
+  let c = "";
+  // 是否开始解析
+  let f = true;
+  // 是否开始准备解析正文
+  let isStart = false;
+  while (i < comment.length) {
+    let s = comment[i];
+    if (s === "/") {
+      if (comment[i + 1] === "/" && f) {
+        isStart = true;
+        f = false;
+        i += 2;
+        continue;
+      }
+    }
+    if (s === " ") {
+      if (isStart) {
+        i += 1;
+        continue;
+      }
+    }
+    if (s === "\n") {
+      return c;
+    }
+    isStart = false;
+    c += s;
+    i += 1;
+  }
+  return c;
+}
+
+/**
+ * 从注释提取正文
+ */
+export function extraContentFromComments(comment: string) {
+  if (!comment) {
+    return "";
+  }
+  if (typeof comment !== "string") {
+    return "";
+  }
+  if (comment.length < 3) {
+    return "";
+  }
+  const isMultiple = comment.slice(0, 3) === "/*";
+  if (isMultiple) {
+    return extraContentFromMultipleComments(comment).join("\n");
+  }
+  return extraContentFromSingleComments(comment);
 }

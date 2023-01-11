@@ -1,5 +1,8 @@
 import { describe, test, expect } from "vitest";
-import { extraContentFromMultipleComments } from "..";
+import {
+  extraContentFromMultipleComments,
+  extraContentFromSingleComments,
+} from "..";
 
 import { NodeTypes, parse } from "../ast";
 
@@ -781,6 +784,54 @@ describe("包含注释", () => {
       ],
     });
   });
+  test("注释在对象 { 符号后", () => {
+    const jsonStr = `{
+  "person": { // 行末注释1
+    "name": "ltaoo",
+  }
+}`;
+    const result = parse(jsonStr);
+    expect(result).toStrictEqual({
+      type: NodeTypes.Object,
+      children: [
+        {
+          type: NodeTypes.Property,
+          key: {
+            type: NodeTypes.Identifier,
+            value: "person",
+            raw: "person",
+          },
+          value: {
+            type: NodeTypes.Object,
+            children: [
+              {
+                type: NodeTypes.Property,
+                key: {
+                  type: NodeTypes.Identifier,
+                  value: "name",
+                  raw: "name",
+                },
+                value: {
+                  type: NodeTypes.Literal,
+                  value: "ltaoo",
+                  raw: "ltaoo",
+                },
+              },
+            ],
+            leadingComments: [
+              {
+                type: NodeTypes.SingleLineComment,
+                text: "行末注释1",
+              },
+            ],
+            trailingComments: [],
+          },
+          leadingComments: [],
+          trailingComments: [],
+        },
+      ],
+    });
+  });
   test("数组元素注释", () => {
     const jsonStr = `{
   	"persons": [
@@ -905,6 +956,46 @@ describe("包含注释", () => {
             ],
           },
           leadingComments: [],
+          trailingComments: [],
+        },
+      ],
+    });
+  });
+  test("注释在 [ 符号后面", () => {
+    const jsonStr = `{
+  	"persons": [ // 行末注释1
+  		"ltaoo",
+  	],
+  }`;
+    const result = parse(jsonStr);
+    expect(result).toStrictEqual({
+      type: NodeTypes.Object,
+      children: [
+        {
+          type: NodeTypes.Property,
+          key: {
+            type: NodeTypes.Identifier,
+            value: "persons",
+            raw: "persons",
+          },
+          value: {
+            type: NodeTypes.Array,
+            children: [
+              {
+                type: NodeTypes.Literal,
+                value: "ltaoo",
+                raw: "ltaoo",
+                leadingComments: [],
+                trailingComments: [],
+              },
+            ],
+          },
+          leadingComments: [
+            {
+              type: NodeTypes.SingleLineComment,
+              text: "// 行末注释1",
+            },
+          ],
           trailingComments: [],
         },
       ],
@@ -1172,24 +1263,24 @@ describe("包含注释", () => {
   });
 });
 
-describe("提取注释正文", () => {
+describe("提取多行注释正文", () => {
   test("标准多行注释", () => {
     const comment = `/**
- * 这是正文1
- * 这是正文2
- */`;
+   * 这是正文1
+   * 这是正文2
+   */`;
     const lines = extraContentFromMultipleComments(comment);
     expect(lines).toStrictEqual(["这是正文1", "这是正文2"]);
   });
 
   test("多了 * 号的多行注释", () => {
     const comment = `/***
-**
- ** 这是正文1
-* 这是正文2
- *这是正文3
- 这是正文4
- ***/`;
+  **
+   ** 这是正文1
+  * 这是正文2
+   *这是正文3
+   这是正文4
+   ***/`;
     const lines = extraContentFromMultipleComments(comment);
     expect(lines).toStrictEqual([
       "这是正文1",
@@ -1199,20 +1290,87 @@ describe("提取注释正文", () => {
     ]);
   });
 
+  test("最简单的多行注释写法", () => {
+    const comment = `/*
+   这是正文1
+   这是正文2
+      这是正文3
+   这是正文4
+  */`;
+    const lines = extraContentFromMultipleComments(comment);
+    expect(lines).toStrictEqual([
+      "这是正文1",
+      "这是正文2",
+      "这是正文3",
+      "这是正文4",
+    ]);
+  });
 
-//   test("最简单的多行注释写法", () => {
-//     const comment = `/*
-//  这是正文1
-//  这是正文2
-//     这是正文3
-//  这是正文4
-// */`;
-//     const lines = extraContentFromMultipleComments(comment);
-//     expect(lines).toStrictEqual([
-//       "这是正文1",
-//       "这是正文2",
-//       "这是正文3",
-//       "这是正文4",
-//     ]);
-//   });
+  test("存在空白行的多行注释", () => {
+    const comment = `/*
+   这是正文1
+
+   这是正文2
+
+   这是正文3
+
+   这是正文4
+  */`;
+    const lines = extraContentFromMultipleComments(comment);
+    expect(lines).toStrictEqual([
+      "这是正文1",
+      "这是正文2",
+      "这是正文3",
+      "这是正文4",
+    ]);
+  });
+
+  test("存在跨行的多行注释", () => {
+    const comment = `/* 这是正文1
+  这是
+  正文4 */`;
+    const lines = extraContentFromMultipleComments(comment);
+    expect(lines).toStrictEqual(["这是正文1", "这是", "正文4"]);
+  });
+
+  test("在一行的多行注释", () => {
+    const comment = `/** 这是正文1 */`;
+    const lines = extraContentFromMultipleComments(comment);
+    expect(lines).toStrictEqual(["这是正文1"]);
+  });
+
+  test("在一行的多行注释2", () => {
+    const comment = `/* 这是正文1 */`;
+    const lines = extraContentFromMultipleComments(comment);
+    expect(lines).toStrictEqual(["这是正文1"]);
+  });
+
+  test("空白多行注释", () => {
+    const comment = `/**
+*/`;
+    const lines = extraContentFromMultipleComments(comment);
+    expect(lines).toStrictEqual([]);
+  });
+});
+
+describe("提取单行注释正文", () => {
+  test("标准多行注释", () => {
+    const comment = "// 这是正文1";
+    const lines = extraContentFromSingleComments(comment);
+    expect(lines).toStrictEqual("这是正文1");
+  });
+
+  test("存在一些误导的注释符号", () => {
+    const comment = "// 这/是正文 /1 // 感觉是单行注释中的第二个单行注释";
+    const lines = extraContentFromSingleComments(comment);
+    expect(lines).toStrictEqual(
+      "这/是正文 /1 // 感觉是单行注释中的第二个单行注释"
+    );
+  });
+
+  test("空白单行注释", () => {
+    const comment = "// ";
+    const lines = extraContentFromSingleComments(comment);
+    expect(lines).toStrictEqual("");
+  });
 });
