@@ -34,6 +34,10 @@ const links = [
     name: "书源制作",
     to: "/book-source",
   },
+  {
+    name: "数据结构转换",
+    to: "/struct-convert",
+  },
 ];
 
 const BasicLayout = () => {

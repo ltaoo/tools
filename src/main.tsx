@@ -19,6 +19,7 @@ const RegexpChallengePage = React.lazy(
 const RegexpBuildPage = React.lazy(() => import("@/pages/regexp-build"));
 const BookSourceBuildPage = React.lazy(() => import("@/pages/book-source"));
 const ImageCreatePage = React.lazy(() => import("@/pages/create-img"));
+const StructConverterPage = React.lazy(() => import("@/pages/struct"));
 
 const loading = <div>Loading</div>;
 
@@ -89,6 +90,14 @@ ReactDOM.render(
             element={
               <React.Suspense fallback={loading}>
                 <ProfilePage />
+              </React.Suspense>
+            }
+          />
+          <Route
+            path="/struct-convert"
+            element={
+              <React.Suspense fallback={loading}>
+                <StructConverterPage />
               </React.Suspense>
             }
           />
