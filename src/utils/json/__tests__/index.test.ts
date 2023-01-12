@@ -786,10 +786,10 @@ describe("包含注释", () => {
   });
   test("注释在对象 { 符号后", () => {
     const jsonStr = `{
-  "person": { // 行末注释1
-    "name": "ltaoo",
-  }
-}`;
+    "person": { // 行末注释1
+      "name": "ltaoo",
+    }
+  }`;
     const result = parse(jsonStr);
     expect(result).toStrictEqual({
       type: NodeTypes.Object,
@@ -815,19 +815,21 @@ describe("包含注释", () => {
                   type: NodeTypes.Literal,
                   value: "ltaoo",
                   raw: "ltaoo",
+                  leadingComments: [],
+                  trailingComments: [],
                 },
+                leadingComments: [],
+                trailingComments: [],
               },
             ],
-            leadingComments: [
-              {
-                type: NodeTypes.SingleLineComment,
-                text: "行末注释1",
-              },
-            ],
-            trailingComments: [],
           },
           leadingComments: [],
-          trailingComments: [],
+          trailingComments: [
+            {
+              type: NodeTypes.SingleLineComment,
+              text: "// 行末注释1",
+            },
+          ],
         },
       ],
     });
@@ -961,12 +963,12 @@ describe("包含注释", () => {
       ],
     });
   });
-  test("注释在 [ 符号后面", () => {
+  test("注释在数组符号后面", () => {
     const jsonStr = `{
-  	"persons": [ // 行末注释1
-  		"ltaoo",
-  	],
-  }`;
+    	"persons": [ // 行末注释1
+    		"ltaoo",
+    	],
+    }`;
     const result = parse(jsonStr);
     expect(result).toStrictEqual({
       type: NodeTypes.Object,
@@ -990,13 +992,13 @@ describe("包含注释", () => {
               },
             ],
           },
-          leadingComments: [
+          leadingComments: [],
+          trailingComments: [
             {
               type: NodeTypes.SingleLineComment,
               text: "// 行末注释1",
             },
           ],
-          trailingComments: [],
         },
       ],
     });
@@ -1045,7 +1047,7 @@ describe("包含注释", () => {
       ],
     });
   });
-  test("1、多行注释", () => {
+  test("多行注释", () => {
     const jsonStr = `{
     	/**
     	 * 这是第一个多行注释

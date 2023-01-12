@@ -49,6 +49,7 @@ let source: string;
 let parseState: ParseState;
 /** 保存解析好的 token 数组 */
 let stack: AstNode[];
+/** 暂存的评论节点 */
 let comments: AstNode[] = [];
 /** JSON 字符串解析到第几个字符 */
 let pos: number;
@@ -62,9 +63,14 @@ let token: Token | undefined;
 let key: string | undefined;
 /** AST 根节点 */
 let root: AstNode | undefined;
+let checkHasBreakBetweenPunctuatorAndComment = false;
+/** 在 [、{ 符号和 注释间是否存在换行符 */
+let hasBreakBetweenPunctuatorAndComment = false;
+let bufferBetweenValueAndComment = "";
+let isTrailingComment = false;
 
 function log(...args: unknown[]) {
-  // console.log(...args);
+  console.log(...args);
 }
 
 /**
@@ -74,15 +80,32 @@ export function parse(text: string, reviver?: boolean) {
   source = String(text);
   parseState = "start";
   stack = [];
+  comments = [];
   pos = 0;
   line = 1;
   column = 0;
   token = undefined;
   key = undefined;
   root = undefined;
+  checkHasBreakBetweenPunctuatorAndComment = false;
+  hasBreakBetweenPunctuatorAndComment = false;
+  bufferBetweenValueAndComment = "";
+  isTrailingComment = false;
+
   do {
     token = lex();
-    log("[](parse)", token, lexState, parseState);
+    log(
+      "[](parse)",
+      token,
+      lexState,
+      parseState,
+      bufferBetweenValueAndComment,
+      hasBreakBetweenPunctuatorAndComment
+    );
+    if (!hasBreakBetweenPunctuatorAndComment) {
+      // asLeadingComment 作为父节点的正常注释，兼容 `[ // 注释` 这种场景
+      token.asLeadingComment = true;
+    }
     // 每次解析完一个 token 就重置掉 token 和 comment 间的字符，用于判断 token 和 comment 间是否有换行，从而判断出该注释属于行末注释还是正常注释
     if (!["multiLineComment", "singleLineComment"].includes(token.type)) {
       bufferBetweenValueAndComment = "";
@@ -150,9 +173,6 @@ function lex(): Token {
   }
 }
 
-let bufferBetweenValueAndComment = "";
-let isTrailingComment = false;
-
 /** 词法解析器 */
 const lexStates: Record<LexState | ParseState, Function> = {
   default() {
@@ -183,10 +203,16 @@ const lexStates: Record<LexState | ParseState, Function> = {
         // 注释的开始，但不确定是单行还是多行，所以到 comment() {} 中判断
         buffer += read();
         log(
-          "[lexStates](default) - check is trailing comment",
+          "[lexStates](default) - check is comment",
           bufferBetweenValueAndComment,
-          bufferBetweenValueAndComment.length
+          checkHasBreakBetweenPunctuatorAndComment
         );
+        if (
+          bufferBetweenValueAndComment.includes("\n") &&
+          checkHasBreakBetweenPunctuatorAndComment
+        ) {
+          hasBreakBetweenPunctuatorAndComment = true;
+        }
         if (bufferBetweenValueAndComment.includes("\n")) {
           isTrailingComment = false;
         } else {
@@ -259,7 +285,6 @@ const lexStates: Record<LexState | ParseState, Function> = {
   },
   singleLineComment() {
     // log("[lexStates](singleLineComment)", c, parseState);
-
     switch (c) {
       case "\n":
       case "\r":
@@ -274,12 +299,6 @@ const lexStates: Record<LexState | ParseState, Function> = {
           bufferBetweenValueAndComment,
           bufferBetweenValueAndComment.length
         );
-        // if (bufferBetweenValueAndComment.includes("\n")) {
-        //   isTrailingComment = false;
-        // } else {
-        //   isTrailingComment = true;
-        // }
-        // bufferBetweenValueAndComment = "";
         const t = newToken("singleLineComment", buffer);
         buffer = "";
         lexState = "default";
@@ -295,6 +314,7 @@ const lexStates: Record<LexState | ParseState, Function> = {
   },
   value() {
     log("[lexStates](value)", c);
+    // checkHasBreakBetweenPunctuatorAndComment = false;
     switch (c) {
       case "{":
       case "[":
@@ -568,6 +588,7 @@ const lexStates: Record<LexState | ParseState, Function> = {
     return newToken("numeric", sign * Number(buffer));
   },
   string() {
+    // log("[lexStates](string)", c);
     switch (c) {
       case "\\":
         read();
@@ -604,12 +625,14 @@ const lexStates: Record<LexState | ParseState, Function> = {
     switch (c) {
       case "{":
       case "[":
+        checkHasBreakBetweenPunctuatorAndComment = true;
         return newToken("punctuator", read());
     }
     lexState = "value";
   },
   beforePropertyName() {
     log("[lexStates](beforePropertyValue)", c);
+    // checkHasBreakBetweenPunctuatorAndComment = false;
     switch (c) {
       case "$":
       case "_":
@@ -1053,6 +1076,20 @@ function push() {
       isTrailingComment
     ) {
       const properties = current.children;
+      // 如果当前的对象还没有任何键值对，考虑不作为第一个键值对的注释，而是该对象所属的键值对的注释。兼容 `{ // 这是注释`  的场景
+      if (properties.length === 0) {
+        const parent = stack[stack.length - 2];
+        if (parent && parent.type === NodeTypes.Object) {
+          const parentProperties = parent.children;
+          const lastParentProperty =
+            parentProperties[parentProperties.length - 1];
+          if (lastParentProperty) {
+            lastParentProperty.trailingComments =
+              lastParentProperty.trailingComments.concat(comments);
+            comments = [];
+          }
+        }
+      }
       const latestProperty = properties[properties.length - 1];
       if (latestProperty) {
         latestProperty.trailingComments =
@@ -1063,6 +1100,22 @@ function push() {
     // 数组元素值增加行末注释
     if (current.type === NodeTypes.Array && comments.length !== 0) {
       const properties = current.children;
+
+      // 如果当前的数组还没有任何键值对。兼容 `[ // 这是注释`  的场景
+      if (properties.length === 0 && token.asLeadingComment) {
+        const parent = stack[stack.length - 2];
+        if (parent && parent.type === NodeTypes.Object) {
+          const parentProperties = parent.children;
+          const lastParentProperty =
+            parentProperties[parentProperties.length - 1];
+          if (lastParentProperty) {
+            lastParentProperty.trailingComments =
+              lastParentProperty.trailingComments.concat(comments);
+            comments = [];
+          }
+        }
+      }
+
       const latestProperty = properties[properties.length - 1];
       if (latestProperty && comments.length !== 0 && isTrailingComment) {
         latestProperty.trailingComments =
