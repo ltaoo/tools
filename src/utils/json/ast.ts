@@ -70,7 +70,7 @@ let bufferBetweenValueAndComment = "";
 let isTrailingComment = false;
 
 function log(...args: unknown[]) {
-  console.log(...args);
+  // console.log(...args);
 }
 
 /**
@@ -102,6 +102,11 @@ export function parse(text: string, reviver?: boolean) {
       bufferBetweenValueAndComment,
       hasBreakBetweenPunctuatorAndComment
     );
+    // 遇到 [ 或 { 就开始检测是否存在符号后注释，这种注释，会作为父节点注释
+    if (token.type === "punctuator" && ["{", "["].includes(token.value)) {
+      hasBreakBetweenPunctuatorAndComment = false;
+      checkHasBreakBetweenPunctuatorAndComment = true;
+    }
     if (!hasBreakBetweenPunctuatorAndComment) {
       // asLeadingComment 作为父节点的正常注释，兼容 `[ // 注释` 这种场景
       token.asLeadingComment = true;
@@ -205,7 +210,8 @@ const lexStates: Record<LexState | ParseState, Function> = {
         log(
           "[lexStates](default) - check is comment",
           bufferBetweenValueAndComment,
-          checkHasBreakBetweenPunctuatorAndComment
+          checkHasBreakBetweenPunctuatorAndComment,
+          hasBreakBetweenPunctuatorAndComment
         );
         if (
           bufferBetweenValueAndComment.includes("\n") &&
@@ -620,12 +626,12 @@ const lexStates: Record<LexState | ParseState, Function> = {
     }
     buffer += read();
   },
-  /** 当 default 执行完成后，就会到这里，表示跳过前面的空白字符，真正开始解析了？ */
+  /** 当 default 执行完成后，就会到这里，表示跳过前面的空白字符，真正开始解析了？中途如果解析到 [、{ 并不会调用这里 */
   start() {
+    log("[lexStates](start)", c);
     switch (c) {
       case "{":
       case "[":
-        checkHasBreakBetweenPunctuatorAndComment = true;
         return newToken("punctuator", read());
     }
     lexState = "value";

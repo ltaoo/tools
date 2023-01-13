@@ -6,17 +6,37 @@ import { AstNode, NodeTypes } from "./ast";
 /**
  * 检查多个 ast 类型是否一致
  */
-function isSameType(astList: AstNode[]) {
+function isNotSameType(astList: AstNode[]) {
   if (astList.length === 0) {
-    return true;
+    return false;
   }
   if (astList.length === 1) {
-    return true;
+    return false;
   }
   const first = astList[0];
-  const { type } = first;
+  console.log("[](isSameType)", first, astList.slice(1));
   return astList.slice(1).some((node) => {
-    node.type !== type;
+    const { type } = node;
+    const { type: firstType } = first;
+    if (firstType === NodeTypes.Object) {
+      if (type === NodeTypes.Object) {
+        return false;
+      }
+      return true;
+    }
+    if (firstType === NodeTypes.Array) {
+      if (type === NodeTypes.Array) {
+        return false;
+      }
+      return true;
+    }
+    if (firstType === NodeTypes.Literal) {
+      if (type === NodeTypes.Literal) {
+        return typeof node.value !== typeof first.value;
+      }
+      return true;
+    }
+    return true;
   });
 }
 
@@ -33,19 +53,20 @@ export function toJSONSchema(ast: AstNode) {
         };
       }, {}),
     };
-    const description = getDescription(ast);
-    if (description) {
-      node.description = description;
-    }
+    // const description = getDescription(ast);
+    // if (description) {
+    //   node.description = description;
+    // }
     return node;
   }
   if (type === NodeTypes.Array) {
     const { children } = ast;
-    const childrenIsSameType = isSameType(children);
+    const childrenIsNotSameType = isNotSameType(children);
+    console.log("[](toJSONSchema) - array", children, childrenIsNotSameType);
     const node = {
       type: "array",
       items: (() => {
-        if (!childrenIsSameType) {
+        if (childrenIsNotSameType) {
           return children.map(toJSONSchema);
         }
         if (children.length === 0) {
@@ -56,10 +77,10 @@ export function toJSONSchema(ast: AstNode) {
         return toJSONSchema(children[0]);
       })(),
     };
-    const description = getDescription(ast);
-    if (description) {
-      node.description = description;
-    }
+    // const description = getDescription(ast);
+    // if (description) {
+    //   node.description = description;
+    // }
     return node;
   }
   if (type === NodeTypes.Property) {
@@ -71,7 +92,7 @@ export function toJSONSchema(ast: AstNode) {
     };
     const description = getDescription(ast);
     if (description) {
-      node.description = description;
+      node[key.value].description = description;
     }
     return node;
   }
@@ -79,10 +100,10 @@ export function toJSONSchema(ast: AstNode) {
     const node = {
       type: typeof ast.value,
     };
-    const description = getDescription(ast);
-    if (description) {
-      node.description = description;
-    }
+    // const description = getDescription(ast);
+    // if (description) {
+    //   node.description = description;
+    // }
     return node;
   }
   return null;
@@ -107,13 +128,12 @@ function getDescription(ast: AstNode) {
  */
 export function extraContentFromMultipleComments(comment: string) {
   const result: string[] = [];
-
   let i = 2;
   let content = "";
   let isNewLine = false;
   while (i < comment.length) {
     const s = comment[i];
-
+    // console.log("[extra] - loop", i, s);
     if (s === "\n") {
       isNewLine = true;
       if (content) {
@@ -146,6 +166,13 @@ export function extraContentFromMultipleComments(comment: string) {
         continue;
       }
     }
+    if (s === "\t") {
+      if (isNewLine) {
+        i += 1;
+        continue;
+      }
+    }
+    // console.log("[extra]save content", isNewLine, content);
     isNewLine = false;
     content += s;
     i += 1;
@@ -205,7 +232,7 @@ export function extraContentFromComments(comment: string) {
   if (comment.length < 3) {
     return "";
   }
-  const isMultiple = comment.slice(0, 3) === "/*";
+  const isMultiple = comment.slice(0, 2) === "/*";
   if (isMultiple) {
     return extraContentFromMultipleComments(comment).join("\n");
   }

@@ -8,11 +8,13 @@ import { parse } from "@/utils/json/ast";
 import { useValue } from "@/hooks";
 import Editor from "@/components/editor";
 import { toJSONSchema } from "@/utils/json";
+import { jsonSchema2Interface } from "@/utils/typescript";
 
 const ReplPage = () => {
   const [code, setCode] = useValue("", {});
   const [astJSON, setAstJSON] = useState("");
   const [schemaJSON, setSchemaJSON] = useState("");
+  const [interfaceStr, setInterfaceStr] = useState("");
 
   const convert = useCallback((codeString) => {
     const language = "json";
@@ -20,6 +22,8 @@ const ReplPage = () => {
     setAstJSON(JSON.stringify(ast, null, 2));
     const schema = toJSONSchema(ast);
     setSchemaJSON(JSON.stringify(schema, null, 2));
+    const inter = jsonSchema2Interface(schema);
+    setInterfaceStr(inter);
   }, []);
 
   return (
@@ -42,14 +46,19 @@ const ReplPage = () => {
           </div>
         </div>
         <div className="flex">
-          <div className="p-4 max-w-[240px] overflow-x-auto rounded bg-[#c1c1c1]">
+          <div className="p-4 max-w-[480px] overflow-x-auto rounded bg-[#c1c1c1]">
             <pre>
               <code>{astJSON}</code>
             </pre>
           </div>
-          <div className="p-4 max-w-[240px] overflow-x-auto rounded bg-[#c1c1c1]">
+          <div className="p-4 max-w-[480px] overflow-x-auto rounded bg-[#c1c1c1]">
             <pre>
               <code>{schemaJSON}</code>
+            </pre>
+          </div>
+          <div className="p-4 max-w-[480px] overflow-x-auto rounded bg-[#c1c1c1]">
+            <pre>
+              <code>{interfaceStr}</code>
             </pre>
           </div>
         </div>
