@@ -1,6 +1,7 @@
 import { describe, test, expect, expectTypeOf } from "vitest";
 import {
   buildCommentFromDescription,
+  JSONSchema,
   jsonSchema2Interface,
   jsonSchema2JSDoc,
 } from "..";
@@ -33,7 +34,7 @@ describe("生成 typescript interface", () => {
         },
       },
     };
-    const interfaceStr = jsonSchema2Interface(schema);
+    const interfaceStr = jsonSchema2Interface(schema as JSONSchema);
     expect(interfaceStr).toBe(`{
   /**
    * 字段名最好是驼峰格式，不要返回没有用的字段
@@ -89,7 +90,7 @@ describe("生成 typescript interface", () => {
         },
       },
     };
-    const interfaceStr = jsonSchema2Interface(schema);
+    const interfaceStr = jsonSchema2Interface(schema as JSONSchema);
     expect(interfaceStr).toBe(`{
   /**
    * 字段名最好是驼峰格式，不要返回没有用的字段
@@ -171,7 +172,7 @@ describe("生成 typescript interface", () => {
         },
       },
     };
-    const interfaceStr = jsonSchema2Interface(schema);
+    const interfaceStr = jsonSchema2Interface(schema as JSONSchema);
     expect(interfaceStr).toBe(`{
   /**
    * 字段名最好是驼峰格式，不要返回没有用的字段
@@ -184,9 +185,13 @@ describe("生成 typescript interface", () => {
   success: boolean;
   /** 包含各种类型数据 */
   anything: [
+    /** 名称 */
     string,
+    /** 年龄 */
     number,
+    /** 开心 */
     boolean,
+    /** 更多1 */
     {
       /** 正在阅读 */
       books: string[];
@@ -216,18 +221,17 @@ describe("生成 typescript interface", () => {
             },
             description: "更多1",
           },
-          description: "包含各种类型数据",
+          description: "元素均为对象",
         },
       },
     };
-    const interfaceStr = jsonSchema2Interface(schema);
+    const interfaceStr = jsonSchema2Interface(schema as JSONSchema);
     expect(interfaceStr).toBe(`{
-  /** 包含各种类型数据 */
+  /** 元素均为对象 */
   anything: {
-      /** 正在阅读 */
-      books: string[];
-    }[]
-  ];
+    /** 正在阅读 */
+    books: string[];
+  }[];
 }`);
   });
 });
@@ -272,7 +276,7 @@ describe("生成 typescript JavaScript doc", () => {
         },
       },
     };
-    const interfaceStr = jsonSchema2JSDoc(schema);
+    const interfaceStr = jsonSchema2JSDoc(schema as JSONSchema);
     expect(interfaceStr).toBe(`/**
  * @typedef {object} ResponseRoot
  * @prop {object} data 字段名最好是驼峰格式，不要返回没有用的字段。data只能是object类型
@@ -322,7 +326,7 @@ describe("生成 typescript JavaScript doc", () => {
         },
       },
     };
-    const interfaceStr = jsonSchema2JSDoc(schema);
+    const interfaceStr = jsonSchema2JSDoc(schema as JSONSchema);
     expect(interfaceStr).toBe(`/**
  * @typedef {object} ResponseRoot
  * @prop {object} data 字段名最好是驼峰格式，不要返回没有用的字段。data只能是object类型
@@ -340,21 +344,12 @@ describe("从 schema 的 description 构建 interface 的注释", () => {
   test("不包含换行符，都生成一行的多行注释", () => {
     const description = "这是名称";
     const comment = buildCommentFromDescription(description);
-    expect(comment).toBe("/** 这是名称 */");
+    expect(comment).toStrictEqual(["/** 这是名称 */"]);
   });
 
   test("包含换行符，都生成多行的多行注释", () => {
     const description = "这是名称\n注意";
     const comment = buildCommentFromDescription(description);
-    expect(comment).toBe("/**\n * 这是名称\n * 注意\n */");
-  });
-
-  test("存在 2 个缩进的多行注释", () => {
-    const description = "这是名称\n注意";
-    const comment = buildCommentFromDescription(description, 2);
-    expect(comment).toBe(`    /**
-     * 这是名称
-     * 注意
-     */`);
+    expect(comment).toStrictEqual(["/**", " * 这是名称", " * 注意", " */"]);
   });
 });
