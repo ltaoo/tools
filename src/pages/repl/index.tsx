@@ -5,7 +5,7 @@ import { useCallback, useState } from "react";
 
 import { generateFn, safeInvokeWrap } from "@/utils";
 import { useValue } from "@/hooks";
-import Editor from "@/components/editor";
+import Editor from "@/components/SuperEditor";
 
 const ReplPage = () => {
   const [logs, setLogs] = useState<any[]>([]);

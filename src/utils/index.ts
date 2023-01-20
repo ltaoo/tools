@@ -127,3 +127,30 @@ export function downloadImg(url: string, filename: string = "untitled.png") {
   img.crossOrigin = "anonymous";
   img.src = url;
 }
+
+/**
+ * 检测一段代码的语言
+ */
+export function detectLanguage(content: string) {}
+
+export function loadScript(src: string, cb?: Function) {
+  return new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = src;
+
+    document.documentElement.appendChild(script);
+
+    script.onload = () => {
+      if (cb) {
+        cb(null);
+      }
+      resolve(script);
+    };
+    script.onerror = (error) => {
+      if (cb) {
+        cb(error, null);
+      }
+      reject();
+    };
+  });
+}

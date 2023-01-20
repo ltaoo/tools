@@ -14,7 +14,7 @@ function isNotSameType(astList: AstNode[]) {
     return false;
   }
   const first = astList[0];
-  console.log("[](isSameType)", first, astList.slice(1));
+  // console.log("[](isSameType)", first, astList.slice(1));
   return astList.slice(1).some((node) => {
     const { type } = node;
     const { type: firstType } = first;
@@ -62,7 +62,7 @@ export function toJSONSchema(ast: AstNode) {
   if (type === NodeTypes.Array) {
     const { children } = ast;
     const childrenIsNotSameType = isNotSameType(children);
-    console.log("[](toJSONSchema) - array", children, childrenIsNotSameType);
+    // console.log("[](toJSONSchema) - array", children, childrenIsNotSameType);
     const node = {
       type: "array",
       items: (() => {

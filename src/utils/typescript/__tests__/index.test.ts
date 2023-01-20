@@ -1,4 +1,4 @@
-import { describe, test, expect, expectTypeOf } from "vitest";
+import { describe, test, expect } from "vitest";
 import {
   buildCommentFromDescription,
   JSONSchema,
@@ -35,7 +35,7 @@ describe("生成 typescript interface", () => {
       },
     };
     const interfaceStr = jsonSchema2Interface(schema as JSONSchema);
-    expect(interfaceStr).toBe(`{
+    expect(interfaceStr).toBe(`interface ResponseRoot {
   /**
    * 字段名最好是驼峰格式，不要返回没有用的字段
    * data只能是object类型
@@ -91,7 +91,7 @@ describe("生成 typescript interface", () => {
       },
     };
     const interfaceStr = jsonSchema2Interface(schema as JSONSchema);
-    expect(interfaceStr).toBe(`{
+    expect(interfaceStr).toBe(`interface ResponseRoot {
   /**
    * 字段名最好是驼峰格式，不要返回没有用的字段
    * data只能是object类型
@@ -173,7 +173,7 @@ describe("生成 typescript interface", () => {
       },
     };
     const interfaceStr = jsonSchema2Interface(schema as JSONSchema);
-    expect(interfaceStr).toBe(`{
+    expect(interfaceStr).toBe(`interface ResponseRoot {
   /**
    * 字段名最好是驼峰格式，不要返回没有用的字段
    * data只能是object类型
@@ -226,7 +226,7 @@ describe("生成 typescript interface", () => {
       },
     };
     const interfaceStr = jsonSchema2Interface(schema as JSONSchema);
-    expect(interfaceStr).toBe(`{
+    expect(interfaceStr).toBe(`interface ResponseRoot {
   /** 元素均为对象 */
   anything: {
     /** 正在阅读 */
@@ -236,19 +236,7 @@ describe("生成 typescript interface", () => {
   });
 });
 
-describe("生成 typescript JavaScript doc", () => {
-  /**
-   * {
-   *    // 多行注释(多行注释里不能写多行注释，这里表示下)
-   *    data: {
-   *      orderNo: "123", // 单号
-   *    },
-   *    success: true,
-   *    itemImgs: [ // 图片列表
-   *      "http://img.com",
-   *    ]
-   * }
-   */
+describe("生成 JSDoc", () => {
   test("包含注释", () => {
     const schema = {
       type: "object",
@@ -279,10 +267,10 @@ describe("生成 typescript JavaScript doc", () => {
     const interfaceStr = jsonSchema2JSDoc(schema as JSONSchema);
     expect(interfaceStr).toBe(`/**
  * @typedef {object} ResponseRoot
- * @prop {object} data 字段名最好是驼峰格式，不要返回没有用的字段。data只能是object类型
- * @prop {number} data.orderNo 单号
- * @prop {boolean} success
- * @prop {string[]} itemImgs 图片列表
+ * @prop {object} ResponseRoot.data 字段名最好是驼峰格式，不要返回没有用的字段。data只能是object类型
+ * @prop {number} ResponseRoot.data.orderNo 单号
+ * @prop {boolean} ResponseRoot.success
+ * @prop {string[]} ResponseRoot.itemImgs 图片列表
  */`);
   });
 
@@ -329,13 +317,117 @@ describe("生成 typescript JavaScript doc", () => {
     const interfaceStr = jsonSchema2JSDoc(schema as JSONSchema);
     expect(interfaceStr).toBe(`/**
  * @typedef {object} ResponseRoot
- * @prop {object} data 字段名最好是驼峰格式，不要返回没有用的字段。data只能是object类型
- * @prop {number} data.orderNo 单号
- * @prop {object} data.person 参与者
- * @prop {string} data.person.name 姓名
- * @prop {object} data.person.habits 爱好
- * @prop {boolean} data.person.habits.sleep 睡觉
- * @prop {boolean} success
+ * @prop {object} ResponseRoot.data 字段名最好是驼峰格式，不要返回没有用的字段。data只能是object类型
+ * @prop {number} ResponseRoot.data.orderNo 单号
+ * @prop {object} ResponseRoot.data.person 参与者
+ * @prop {string} ResponseRoot.data.person.name 姓名
+ * @prop {object} ResponseRoot.data.person.habits 爱好
+ * @prop {boolean} ResponseRoot.data.person.habits.sleep 睡觉
+ * @prop {boolean} ResponseRoot.success
+ */`);
+  });
+
+  test("数组中包含不同类型的值", () => {
+    const schema = {
+      type: "object",
+      properties: {
+        data: {
+          type: "object",
+          properties: {
+            orderNo: {
+              type: "number",
+              description: "单号",
+            },
+          },
+          description:
+            "字段名最好是驼峰格式，不要返回没有用的字段\ndata只能是object类型",
+        },
+        success: {
+          type: "boolean",
+        },
+        anything: {
+          type: "array",
+          items: [
+            {
+              type: "string",
+              description: "名称",
+            },
+            {
+              type: "number",
+              description: "年龄",
+            },
+            {
+              type: "boolean",
+              description: "开心",
+            },
+            {
+              type: "object",
+              properties: {
+                books: {
+                  type: "array",
+                  items: {
+                    type: "string",
+                  },
+                  description: "正在阅读",
+                },
+              },
+              description: "更多1",
+            },
+            {
+              type: "array",
+              items: {
+                type: "string",
+              },
+              description: "想阅读",
+            },
+          ],
+          description: "包含各种类型数据",
+        },
+      },
+    };
+    const interfaceStr = jsonSchema2JSDoc(schema as JSONSchema);
+    expect(interfaceStr).toBe(`/**
+ * @typedef {object} FourthAnything 更多1
+ * @prop {string[]} FourthAnything.books 正在阅读
+ *
+ * @typedef {object} ResponseRoot
+ * @prop {object} ResponseRoot.data 字段名最好是驼峰格式，不要返回没有用的字段。data只能是object类型
+ * @prop {number} ResponseRoot.data.orderNo 单号
+ * @prop {boolean} ResponseRoot.success
+ * @prop {[string, number, boolean, FourthAnything, string[]]} ResponseRoot.anything 包含各种类型数据
+ */`);
+  });
+
+  test("数组中是相同的对象", () => {
+    const schema = {
+      type: "object",
+      properties: {
+        anything: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              books: {
+                type: "array",
+                items: {
+                  type: "string",
+                },
+                description: "正在阅读",
+              },
+            },
+            description: "更多1",
+          },
+          description: "元素均为对象",
+        },
+      },
+    };
+    const interfaceStr = jsonSchema2JSDoc(schema as JSONSchema);
+    expect(interfaceStr).toBe(`/**
+ * @typedef {object} FirstAnything 更多1
+ * @prop {string[]} FirstAnything.books 正在阅读
+ *
+ * @typedef {object} ResponseRoot
+ * @prop {FirstAnything[]} ResponseRoot.anything 元素均为对象
  */`);
   });
 });

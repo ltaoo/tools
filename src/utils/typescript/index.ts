@@ -1,4 +1,6 @@
-enum JSONSchemaTypes {
+import { DEFAULT_ROOT_KEY } from "./constants";
+
+export enum JSONSchemaTypes {
   String = "string",
   Number = "number",
   Object = "object",
@@ -66,54 +68,36 @@ export type JSONSchema = MutableRecord<{
     description?: string;
   };
 }>;
-function inner(
+
+/**
+ * 从 json schema 构建 interface，但是返回的是数组，每一个元素是一行内容
+ * @param {JSONSchema} schema
+ * @param {number} deep
+ * @returns {string[]}
+ */
+export function buildInterfaceLines(
   schema: JSONSchema,
-  parent: JSONSchema | null,
   deep: number = 0
 ): string | string[] {
   const { type } = schema;
   if (type === JSONSchemaTypes.String) {
-    // if (parent?.type === JSONSchemaTypes.Array) {
-    //   return "string,";
-    // }
     return `string`;
   }
   if (type === JSONSchemaTypes.Number) {
-    // if (parent?.type === JSONSchemaTypes.Array) {
-    //   return "number,";
-    // }
     return `number`;
   }
   if (type === JSONSchemaTypes.Boolean) {
-    // if (parent?.type === JSONSchemaTypes.Array) {
-    //   return "boolean,";
-    // }
     return `boolean`;
   }
   if (type === JSONSchemaTypes.Null) {
-    // if (parent?.type === JSONSchemaTypes.Array) {
-    //   return "null,";
-    // }
     return `null`;
   }
   if (type === JSONSchemaTypes.Object) {
     const { properties } = schema;
-    const normalIndent = (() => {
-      if (parent === null) {
-        return true;
-      }
-      if (
-        parent.type === JSONSchemaTypes.Array &&
-        !Array.isArray(parent.items)
-      ) {
-        return false;
-      }
-      return true;
-    })();
     const propertySignatures = Object.keys(properties).map((key) => {
       const property = properties[key];
       const propertyDeep = deep + 1;
-      let value = inner(property, schema, propertyDeep);
+      let value = buildInterfaceLines(property, propertyDeep);
       const comments = buildCommentFromDescription(property.description);
       let keyAndValue: string | string[] = `${key}: ${value}`;
       if (Array.isArray(value)) {
@@ -125,7 +109,6 @@ function inner(
       }
       const s = generateWhitespace(1);
       const r = lines.map((line) => s + line);
-      // 加分号
       return addStrAtEndOfArrayItem(r, ";");
     });
     const result = ["{", ...propertySignatures, "}"]
@@ -135,11 +118,6 @@ function inner(
       .reduce((cur, total) => {
         return cur.concat(total);
       }, [] as string[])
-      .map((line) => {
-        const s = generateWhitespace(1);
-        // console.log("line adding space", line, typeof line, s);
-        return line;
-      })
       .reduce((prev, cur) => {
         if (Array.isArray(cur)) {
           return (prev as string[]).concat(cur);
@@ -156,7 +134,7 @@ function inner(
       const s = generateWhitespace(1);
       const childNodes = items
         .map((item) => {
-          const line = inner(item, schema, nextDeep);
+          const line = buildInterfaceLines(item, nextDeep);
           const c = buildCommentFromDescription(item.description);
           if (Array.isArray(line)) {
             return c.concat(line);
@@ -175,13 +153,11 @@ function inner(
           return cur.concat(total);
         }, [] as string[])
         .map((line) => {
-          // console.log("in array loop", line);
           return s + line;
         });
-      // console.log("array lines", childNodes);
       return ["[", ...childNodes, "]"];
     }
-    const originalLines = inner(items, schema, nextDeep);
+    const originalLines = buildInterfaceLines(items, nextDeep);
     if (Array.isArray(originalLines)) {
       return addStrAtEndOfArrayItem(originalLines, "[]");
     }
@@ -199,74 +175,111 @@ function addStrAtEndOfArrayItem(arr: string[], str: string) {
  * @param {number} deep 深度，用来生成缩进空白符
  * @param {boolean} needSpace 是否需要空白，如果是数组内的元素，是需要的，其他情况下是键值对，所以不需要空白
  */
-export function jsonSchema2Interface(schema: JSONSchema, deep = 0): string {
-  const result = inner(schema, null, deep);
-  // console.log("result in the end", result);
+export function jsonSchema2Interface(
+  schema: JSONSchema,
+  options: Partial<{
+    rootKey: string;
+  }> = {}
+): string {
+  const { rootKey = DEFAULT_ROOT_KEY } = options;
+  const result = buildInterfaceLines(schema);
   if (Array.isArray(result)) {
+    if (result[0] === "{") {
+      return [`interface ${rootKey} ${result[0]}`]
+        .concat(result.slice(1))
+        .join("\n");
+    }
     return result.join("\n");
   }
   return result;
 }
 
+let extraTypes: string[] = [];
 /**
  * JSON schema 转 typescript js doc
  * @param {JSONSchema} schema
+ * @param parentKeys 父路径，如果当前字段是 c，那么 a.b.c 中的 ['a', 'b'] 就是 parentKeys
  * @param {number} deep 深度，用来生成缩进空白符
  */
-export function jsonSchema2JSDoc(
+export function buildJSDocLines(
   schema: JSONSchema,
-  ownerKeys: string[] = [],
+  parentKeys: string[] = ["ResponseRoot"],
   deep: number = 0
-): string {
-  const { type, description, title } = schema;
+): string | string[] {
+  const { type, description } = schema;
   if (type === JSONSchemaTypes.String) {
-    let s = ` * @prop {string} ${ownerKeys.join(".")}`;
-    if (description) {
-      return s + ` ${description}`;
-    }
-    return s;
+    return "string";
+    // let s = ` * @prop {string} ${parentKeys.join(".")}`;
+    // if (description) {
+    //   return s + ` ${description}`;
+    // }
+    // return s;
   }
   if (type === JSONSchemaTypes.Number) {
-    let s = ` * @prop {number} ${ownerKeys.join(".")}`;
-    if (description) {
-      return s + ` ${description}`;
-    }
-    return s;
+    return "number";
+    // let s = ` * @prop {number} ${parentKeys.join(".")}`;
+    // if (description) {
+    //   return s + ` ${description}`;
+    // }
+    // return s;
   }
   if (type === JSONSchemaTypes.Boolean) {
-    let s = ` * @prop {boolean} ${ownerKeys.join(".")}`;
-    if (description) {
-      return s + ` ${description}`;
-    }
-    return s;
+    return "boolean";
+    // let s = ` * @prop {boolean} ${parentKeys.join(".")}`;
+    // if (description) {
+    //   return s + ` ${description}`;
+    // }
+    // return s;
   }
   if (type === JSONSchemaTypes.Null) {
-    let s = ` * @prop {null} ${ownerKeys.join(".")}`;
-    if (description) {
-      return s + ` ${description}`;
-    }
-    return s;
+    return "null";
+    // let s = ` * @prop {null} ${parentKeys.join(".")}`;
+    // if (description) {
+    //   return s + ` ${description}`;
+    // }
+    // return s;
   }
   if (type === JSONSchemaTypes.Object) {
     const { properties, description } = schema;
-    // 处理子元素
     const propertySignatures = Object.keys(properties)
       .map((key) => {
-        // console.log("[](jsonSchema2JSDoc) - properties loop", key);
-        const property = jsonSchema2JSDoc(
-          properties[key],
-          ownerKeys.concat([key]),
+        const property = properties[key];
+        const { description: propDescription } = property;
+        // console.log("[](jsonSchema2JSDoc) - properties loop", key, parentKeys);
+        const value = buildJSDocLines(
+          property,
+          parentKeys.concat([key]),
           deep + 1
         );
-        // console.log("[](jsonSchema2JSDoc) - created child", key, property);
-        let keyAndValue: string = property;
-        return keyAndValue;
+        // console.log("[](jsonSchema2JSDoc) - created property", key, value);
+        // 如果是数组，说明返回的是一个对象/数组的声明
+        if (Array.isArray(value)) {
+          if (value[0] === "Object") {
+            return value.slice(2);
+          }
+          return value;
+        }
+        const keys = parentKeys.concat(key).join(".");
+        const propString = ` * @prop {${value}} ${keys}`;
+        if (propDescription) {
+          return `${propString} ${propDescription}`;
+        }
+        return propString;
       })
-      .join("\n");
-    if (deep === 0) {
-      return `/**\n * @typedef {object} ResponseRoot\n${propertySignatures}\n */`;
-    }
-    let s = ` * @prop {object} ${ownerKeys.join(".")}`;
+      .reduce((prev, cur) => {
+        if (Array.isArray(cur)) {
+          return (prev as string[]).concat(cur);
+        }
+        return (prev as string[]).concat([cur]);
+      }, [] as string[]);
+    // console.log(
+    //   "[](buildJSDocLines) - loop an object properties completed",
+    //   propertySignatures
+    // );
+    const keys = parentKeys.join(".");
+    let s = ` * @${
+      parentKeys.length === 1 ? "typedef" : "prop"
+    } {object} ${keys}`;
     if (description) {
       s += ` ${(() => {
         if (description.includes("\n")) {
@@ -275,29 +288,73 @@ export function jsonSchema2JSDoc(
         return description;
       })()}`;
     }
-    s += `\n${propertySignatures}`;
-    return s;
+    if (deep === 0) {
+      return [s, ...propertySignatures];
+    }
+    return ["Object", keys, s, ...propertySignatures];
   }
   if (type === JSONSchemaTypes.Array) {
     const { items } = schema;
     if (Array.isArray(items)) {
-      return items
-        .map((item) => {
-          return jsonSchema2Interface(item, deep + 1);
-        })
-        .join("\n");
+      const lines = items.map((item, i) => {
+        const lines = buildJSDocLines(
+          item,
+          [generateArrayItemName(i, parentKeys)],
+          deep + 1
+        );
+        if (Array.isArray(lines) && lines[0] === "Object") {
+          extraTypes.push(...lines.slice(2));
+          return lines[1];
+        }
+        return lines;
+      });
+      return `[${lines.join(", ")}]`;
     }
-    let s = ` * @prop {${items.type}[]} ${ownerKeys.join(".")}`;
-    if (description) {
-      return s + ` ${description}`;
+    const value = buildJSDocLines(
+      items,
+      [generateArrayItemName(0, parentKeys)],
+      deep + 1
+    );
+    // console.log("[]() same type in array, so the value is", value);
+    if (Array.isArray(value)) {
+      if (Array.isArray(value) && value[0] === "Object") {
+        extraTypes.push(...value.slice(2));
+        return `${value[1]}[]`;
+      }
+      return value;
     }
+    const s = `${value}[]`;
     return s;
   }
-  let s = ` * @prop {unknown} ${ownerKeys.join(".")}`;
-  if (description) {
-    return s + ` ${description}`;
+  return "unknown";
+}
+
+/**
+ * JSON schema 转 typescript js doc
+ * @param {JSONSchema} schema
+ */
+export function jsonSchema2JSDoc(
+  schema: JSONSchema,
+  /** 额外配置 */
+  options: Partial<{
+    /** 根名称 */
+    rootKey: string;
+  }> = {}
+) {
+  const { rootKey = "ResponseRoot" } = options;
+  extraTypes = [];
+  const lines = buildJSDocLines(schema, [rootKey]);
+  // console.log("[](jsonSchema2JSDoc) result lines", lines, extraTypes);
+  const prefixLines = (() => {
+    if (extraTypes.length === 0) {
+      return [];
+    }
+    return extraTypes.concat(" *");
+  })();
+  if (Array.isArray(lines)) {
+    return ["/**", ...prefixLines.concat(lines), " */"].join("\n");
   }
-  return s;
+  return ["/**", lines, " */"].join("\n");
 }
 
 /**
@@ -323,10 +380,52 @@ export function buildCommentFromDescription(description?: string) {
  * @param {number} size 几个空格
  * @returns
  */
-function generateWhitespace(indent: number, size = 2) {
+export function generateWhitespace(indent: number, size = 2) {
   let i = indent < 0 ? 0 : indent;
   if (i === 0) {
     return "";
   }
   return " ".repeat(i * size);
+}
+
+const indexEnglishWord: Record<number, string> = {
+  0: "First",
+  1: "Second",
+  2: "Third",
+  3: "Fourth",
+  4: "Fifthly",
+};
+export function generateArrayItemName(index: number, keys: string[] = []) {
+  // console.log("[](generateArrayItemName)", keys);
+  let suffix = (() => {
+    if (keys.length === 0) {
+      return "ArrayItem";
+    }
+    return upperFirstCase(keys[keys.length - 1]);
+  })();
+  const englishWord = indexEnglishWord[index];
+  if (englishWord) {
+    return englishWord + suffix;
+  }
+  return index + suffix;
+}
+
+function generateUppercaseKeyFromKeys(keyString: string) {
+  const keys = keyString.split(".");
+  const key = keys[keys.length - 1];
+  return key;
+}
+
+export function upperFirstCase(key: string) {
+  if (key.length <= 1) {
+    return key;
+  }
+  return key[0].toUpperCase() + key.slice(1);
+}
+
+export function lowerFirstCase(key: string) {
+  if (key.length <= 1) {
+    return key;
+  }
+  return key[0].toLowerCase() + key.slice(1);
 }
