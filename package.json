@@ -7,6 +7,11 @@
     "build": "tsc && vite build && node scripts/copy.js",
     "preview": "vite preview"
   },
+  "keywords": [
+    "json to interface",
+    "json to js doc",
+    "schema to interface"
+  ],
   "dependencies": {
     "@headlessui/react": "^1.7.7",
     "antd": "^5.1.6",

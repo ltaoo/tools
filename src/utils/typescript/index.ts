@@ -1,3 +1,5 @@
+import { toJSONSchema } from "../json";
+import { parse } from "../json/ast";
 import { DEFAULT_ROOT_KEY } from "./constants";
 
 export enum JSONSchemaTypes {
@@ -451,4 +453,32 @@ export function lowerFirstCase(key: string) {
     return key;
   }
   return key[0].toLowerCase() + key.slice(1);
+}
+
+/**
+ * 将 json 字符串转换成 interface
+ * @param jsonStr
+ */
+export function json2Interface(
+  jsonStr: string,
+  options: Partial<{ rootKey: string; plugin: ConverterLifetimes }>
+) {
+  const ast = parse(jsonStr);
+  const schema = toJSONSchema(ast);
+  const { rootKey = DEFAULT_ROOT_KEY, plugin } = options;
+  return jsonSchema2Interface(schema, [rootKey], plugin);
+}
+
+/**
+ * 将 json 字符串转换成 jsdoc
+ * @param jsonStr
+ */
+export function json2JSDoc(
+  jsonStr: string,
+  options: Partial<{ rootKey: string; plugin: ConverterLifetimes }>
+) {
+  const ast = parse(jsonStr);
+  const schema = toJSONSchema(ast);
+  const { rootKey = DEFAULT_ROOT_KEY, plugin } = options;
+  return jsonSchema2JSDoc(schema, [rootKey], plugin);
 }

@@ -12,7 +12,12 @@ import { parse } from "@/utils/json/ast";
 import { useHistoryRecords, useValue } from "@/hooks";
 import LazyEditor from "@/components/LazyEditor";
 import { toJSONSchema } from "@/utils/json";
-import { jsonSchema2Interface, jsonSchema2JSDoc } from "@/utils/typescript";
+import {
+  json2Interface,
+  json2JSDoc,
+  jsonSchema2Interface,
+  jsonSchema2JSDoc,
+} from "@/utils/typescript";
 import { buildExampleCode } from "@/utils/typescript/example";
 import { jsEnumPlugin, tsEnumPlugin } from "@/utils/typescript/plugins/enum";
 
@@ -40,21 +45,18 @@ const ReplPage = () => {
       return;
     }
     try {
-      const ast = parse(codeString);
-      const schema = toJSONSchema(ast);
-      const regexp = /([0-9a-z]{1,})：([^\(]{1,})\({0,1}([^\)]{1,})\){0,1}；/;
+      const regexp =
+        /([0-9a-z]{1,})[：:]{1}([^;；]{1,})[;；]{1}/;
       const tsLifetimes = tsEnumPlugin(regexp);
       const jsLifetimes = jsEnumPlugin(regexp);
-      interfaceRef.current = jsonSchema2Interface(
-        schema,
-        ["ResponseRoot"],
-        tsLifetimes
-      );
-      jsdocRef.current = jsonSchema2JSDoc(
-        schema,
-        ["ResponseRoot"],
-        jsLifetimes
-      );
+      interfaceRef.current = json2Interface(codeString, {
+        plugin: tsLifetimes,
+      });
+      jsdocRef.current = json2JSDoc(codeString, {
+        plugin: jsLifetimes,
+      });
+      const ast = parse(codeString);
+      const schema = toJSONSchema(ast);
       const interStr = buildExampleCode(schema, {
         language: "ts",
         lifetimes: tsLifetimes,
