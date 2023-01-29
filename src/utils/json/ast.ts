@@ -103,12 +103,17 @@ export function parse(text: string, reviver?: boolean) {
       hasBreakBetweenPunctuatorAndComment
     );
     // 遇到 [ 或 { 就开始检测是否存在符号后注释，这种注释，会作为父节点注释
-    if (token.type === "punctuator" && ["{", "["].includes(token.value)) {
+    if (
+      token.type === "punctuator" &&
+      token.value &&
+      ["{", "["].includes(token.value)
+    ) {
       hasBreakBetweenPunctuatorAndComment = false;
       checkHasBreakBetweenPunctuatorAndComment = true;
     }
     if (!hasBreakBetweenPunctuatorAndComment) {
       // asLeadingComment 作为父节点的正常注释，兼容 `[ // 注释` 这种场景
+      // @ts-ignore
       token.asLeadingComment = true;
     }
     // 每次解析完一个 token 就重置掉 token 和 comment 间的字符，用于判断 token 和 comment 间是否有换行，从而判断出该注释属于行末注释还是正常注释
@@ -119,6 +124,7 @@ export function parse(text: string, reviver?: boolean) {
     parseStates[parseState]();
   } while (token.type !== "eof");
   if (typeof reviver === "function") {
+      // @ts-ignore
     return internalize({ "": root }, "", reviver);
   }
   return root;
@@ -1020,11 +1026,13 @@ function push() {
   }
   log("[](push) - before merge", token, stack, parseState);
   if (root === undefined) {
+    // @ts-ignore
     root = value;
   } else {
     const parent = stack[stack.length - 1];
     if (
       [NodeTypes.MultiLineComment, NodeTypes.SingleLineComment].includes(
+        // @ts-ignore
         value.type
       )
     ) {
@@ -1032,12 +1040,15 @@ function push() {
     } else {
       if (parent.type === NodeTypes.Array) {
         if (comments.length !== 0) {
+          // @ts-ignore
           value.leadingComments = comments;
           comments = [];
         }
+        // @ts-ignore
         parent.children.push(value);
       } else {
         // log("[](push) add object property");
+        // @ts-ignore
         parent.children.push({
           type: NodeTypes.Property,
           key: {
@@ -1045,6 +1056,7 @@ function push() {
             value: key!,
             raw: String(key!),
           },
+          // @ts-ignore
           value,
           leadingComments: comments,
           trailingComments: [],
@@ -1053,8 +1065,11 @@ function push() {
       }
     }
   }
+  // @ts-ignore
   if ([NodeTypes.Object, NodeTypes.Array].includes(value.type)) {
+    // @ts-ignore
     stack.push(value);
+    // @ts-ignore
     if (value.type === NodeTypes.Array) {
       log("[](push)", 6);
       parseState = "beforeArrayValue";
@@ -1064,10 +1079,12 @@ function push() {
     }
   } else if (
     [NodeTypes.MultiLineComment, NodeTypes.SingleLineComment].includes(
+      // @ts-ignore
       value.type
     )
   ) {
     parseState = prevParseState;
+    // @ts-ignore
     comments.push(value);
     const current = stack[stack.length - 1];
     log(
@@ -1090,7 +1107,9 @@ function push() {
           const lastParentProperty =
             parentProperties[parentProperties.length - 1];
           if (lastParentProperty) {
+            // @ts-ignore
             lastParentProperty.trailingComments =
+              // @ts-ignore
               lastParentProperty.trailingComments.concat(comments);
             comments = [];
           }
@@ -1098,7 +1117,9 @@ function push() {
       }
       const latestProperty = properties[properties.length - 1];
       if (latestProperty) {
+        // @ts-ignore
         latestProperty.trailingComments =
+          // @ts-ignore
           latestProperty.trailingComments.concat(comments);
         comments = [];
       }
@@ -1108,6 +1129,7 @@ function push() {
       const properties = current.children;
 
       // 如果当前的数组还没有任何键值对。兼容 `[ // 这是注释`  的场景
+      // @ts-ignore
       if (properties.length === 0 && token.asLeadingComment) {
         const parent = stack[stack.length - 2];
         if (parent && parent.type === NodeTypes.Object) {
@@ -1115,7 +1137,9 @@ function push() {
           const lastParentProperty =
             parentProperties[parentProperties.length - 1];
           if (lastParentProperty) {
+            // @ts-ignore
             lastParentProperty.trailingComments =
+              // @ts-ignore
               lastParentProperty.trailingComments.concat(comments);
             comments = [];
           }
@@ -1124,7 +1148,9 @@ function push() {
 
       const latestProperty = properties[properties.length - 1];
       if (latestProperty && comments.length !== 0 && isTrailingComment) {
+        // @ts-ignore
         latestProperty.trailingComments =
+          // @ts-ignore
           latestProperty.trailingComments.concat(comments);
         comments = [];
       }
@@ -1168,6 +1194,7 @@ function internalize(
     if (Array.isArray(value)) {
       for (let i = 0; i < value.length; i++) {
         const key = String(i);
+        // @ts-ignore
         const replacement = internalize(value, key, reviver);
         if (replacement === undefined) {
           delete value[key];
@@ -1182,6 +1209,7 @@ function internalize(
       }
     } else {
       for (const key in value) {
+        // @ts-ignore
         const replacement = internalize(value, key, reviver);
         if (replacement === undefined) {
           delete value[key];
@@ -1201,12 +1229,12 @@ function internalize(
 }
 
 /** 构建一个违反 JSON 解析的字符错误 */
-function invalidChar(c) {
+function invalidChar(c: unknown) {
   if (c === undefined) {
     return syntaxError(`JSON5: invalid end of input at ${line}:${column}`);
   }
   return syntaxError(
-    `JSON5: invalid character '${formatChar(c)}' at ${line}:${column}`
+    `JSON5: invalid character '${formatChar(c as string)}' at ${line}:${column}`
   );
 }
 /** 构建一个违反 JSON 解析的结尾错误 */

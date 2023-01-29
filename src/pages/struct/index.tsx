@@ -52,6 +52,7 @@ const ReplPage = () => {
       });
       setJSDocStr(jsdoc);
     } catch (err) {
+      // @ts-ignore
       alert(err.message);
     }
   }, []);

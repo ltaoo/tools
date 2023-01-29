@@ -40,8 +40,10 @@ async function loadModulesWithProgress<T extends Record<string, unknown>>(
         name,
         mod,
         getValue = (v) => {
-          if (v.default) {
-            return v.default;
+          // @ts-ignore
+          const d = v.default;
+          if (d) {
+            return d;
           }
           return v;
         },
@@ -52,6 +54,7 @@ async function loadModulesWithProgress<T extends Record<string, unknown>>(
         if (onProgress) {
           onProgress(Math.floor((count / modules.length) * 100));
         }
+        // @ts-ignore
         result[name] = getValue(m);
         if (count === modules.length) {
           if (onSuccess) {
@@ -137,6 +140,7 @@ const Editor: React.FC<IEditorProps> = (props) => {
 
     // @ts-ignore
     window.MonacoEnvironment = {
+      // @ts-ignore
       getWorker(_: unknown, label: "json" | "typescript" | "javascript") {
         if (label === "json") {
           return new jsonWorker();
@@ -241,6 +245,7 @@ const Editor: React.FC<IEditorProps> = (props) => {
     insRef.current = editor;
     if (settings("vim")) {
       const vimMode = initVimMode(editor, vimStatusRef.current);
+      // @ts-ignore
       vimModeRef.current = vimMode;
     }
   }, []);
@@ -268,6 +273,7 @@ const Editor: React.FC<IEditorProps> = (props) => {
           // @ts-ignore
           mod: import("monaco-vim"),
           getValue: (d) => {
+            // @ts-ignore
             return d.initVimMode;
           },
         },

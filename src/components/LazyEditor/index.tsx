@@ -37,6 +37,7 @@ const LazyEditor: React.FC<IEditorProps> = (props) => {
       await loadScript(
         "https://cdn.bootcdn.net/ajax/libs/require.js/2.3.6/require.js"
       );
+      // @ts-ignore
       if (window.requirejs === undefined) {
         return;
       }
@@ -44,6 +45,7 @@ const LazyEditor: React.FC<IEditorProps> = (props) => {
       if (editorRef.current === null) {
         return;
       }
+      // @ts-ignore
       requirejs.config({
         paths: {
           vs: "https://typescript.azureedge.net/cdn/4.9.4/monaco/min/vs",
@@ -51,8 +53,10 @@ const LazyEditor: React.FC<IEditorProps> = (props) => {
         ignoreDuplicateModules: ["vs/editor/editor.main"],
       });
       // console.log("before require modules", vRef.current, languageRef.current);
+      // @ts-ignore
       requirejs(
         ["vs/editor/editor.main", "vs/language/typescript/tsWorker"],
+        // @ts-ignore
         (monaco, ts) => {
           // console.log("loaded modules", monaco, ts, window.ts, vRef.current);
           const editor = monaco.editor.create(editorRef.current, {

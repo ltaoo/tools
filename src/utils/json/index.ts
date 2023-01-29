@@ -41,10 +41,12 @@ function isNotSameType(astList: AstNode[]) {
   });
 }
 
+// @ts-ignore
 export function toJSONSchema(ast: AstNode) {
   const { type } = ast;
   if (type === NodeTypes.Object) {
     const { children } = ast;
+    // @ts-ignore
     const node = {
       type: "object",
       properties: children.map(toJSONSchema).reduce((prev, total) => {
@@ -64,8 +66,10 @@ export function toJSONSchema(ast: AstNode) {
     const { children } = ast;
     const childrenIsNotSameType = isNotSameType(children);
     // console.log("[](toJSONSchema) - array", children, childrenIsNotSameType);
+    // @ts-ignore
     const node = {
       type: "array",
+      // @ts-ignore
       items: (() => {
         if (childrenIsNotSameType) {
           return children.map(toJSONSchema);
@@ -86,13 +90,16 @@ export function toJSONSchema(ast: AstNode) {
   }
   if (type === NodeTypes.Property) {
     const { key, value } = ast;
+    // @ts-ignore
     const node = {
+      // @ts-ignore
       [key.value]: {
         ...toJSONSchema(value),
       },
     };
     const description = getDescription(ast);
     if (description) {
+      // @ts-ignore
       node[key.value].description = description;
     }
     return node;
@@ -116,9 +123,11 @@ export function toJSONSchema(ast: AstNode) {
 }
 
 function getDescription(ast: AstNode) {
+  // @ts-ignore
   const { leadingComments = [], trailingComments = [] } = ast;
   const description = leadingComments
     .concat(trailingComments)
+    // @ts-ignore
     .map((comment) => {
       const { text } = comment;
       const c = extraContentFromComments(text);
