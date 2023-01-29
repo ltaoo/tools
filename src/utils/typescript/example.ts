@@ -1,5 +1,4 @@
 import {
-  buildJSDocLines,
   generateArrayItemName,
   generateWhitespace,
   JSONSchema,
@@ -11,6 +10,7 @@ import {
 import { DEFAULT_ROOT_KEY } from "./constants";
 
 function printSchema(schema: JSONSchema, parentKey: string): string[] {
+  // console.log('[]()printSchema', schema);
   const { type } = schema;
   if (type === JSONSchemaTypes.Object) {
     const { properties } = schema;
@@ -22,14 +22,22 @@ function printSchema(schema: JSONSchema, parentKey: string): string[] {
       .reduce((prev, cur) => {
         return prev.concat(cur);
       }, [] as string[]);
-    const propertyKeys = Object.keys(properties)
-      .map((key) => {
-        return key;
-      })
-      .join(", ");
-    const line = `const { ${propertyKeys} } = ${parentKey};`;
+    if (Object.keys(properties).length <= 5) {
+      const propertyKeys = Object.keys(properties)
+        .map((key) => {
+          return key;
+        })
+        .join(", ");
+      const line = `const { ${propertyKeys} } = ${parentKey};`;
+      //     console.log("[](printSchema) - lines of properties", line, extraLines);
+      return [line].concat(extraLines);
+    }
+    const propertyKeys = Object.keys(properties).map((key) => {
+      return `${generateWhitespace(1)}${key},`;
+    });
+    const line = ["const {", ...propertyKeys, `} = ${parentKey};`];
     //     console.log("[](printSchema) - lines of properties", line, extraLines);
-    return [line].concat(extraLines);
+    return line.concat(extraLines);
   }
   if (type === JSONSchemaTypes.Array) {
     const { items } = schema;

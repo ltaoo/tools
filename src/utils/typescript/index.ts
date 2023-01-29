@@ -7,6 +7,8 @@ export enum JSONSchemaTypes {
   Array = "array",
   Boolean = "boolean",
   Null = "null",
+  /** 数组没有元素，就会出现这种情况 */
+  Unknown = "unknown",
 }
 export type MutableRecord<U> = {
   [SubType in keyof U]: {

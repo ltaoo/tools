@@ -3,9 +3,6 @@
  */
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import type * as monaco from "monaco-editor";
-import { loadScript } from "@/utils";
-// import * as tsw from 'monaco-editor/esm/vs/language/typescript/ts.worker';
-// console.log(tsw);
 
 function settings(key?: string, value?: any) {
   const settings = JSON.parse(localStorage.getItem("settings") || "{}");
@@ -144,9 +141,9 @@ const Editor: React.FC<IEditorProps> = (props) => {
         if (label === "json") {
           return new jsonWorker();
         }
-        // if (label === "typescript" || label === "javascript") {
-        //   return new tsWorker();
-        // }
+        if (label === "typescript" || label === "javascript") {
+          return new tsWorker();
+        }
         return new editorWorker();
       },
     };
@@ -218,29 +215,14 @@ const Editor: React.FC<IEditorProps> = (props) => {
       },
     } as monaco.languages.IMonarchLanguage);
     // console.log("[COMPONENT](SuperEditor) before create editor", defaultValue);
-    // In the future it'd be good to add support for an 'add many files'
     const editor = monaco.editor.create(editorRef.current, {
       value: defaultValue,
       language: languageRef.current,
-      scrollBeyondLastColumn: 3,
-      scrollBeyondLastLine: true,
+      scrollBeyondLastLine: false,
+      renderWhitespace: "all",
       fontSize: 14,
-      quickSuggestions: {
-        other: true,
-        comments: true,
-        strings: true,
-      },
       minimap: {
         enabled: false,
-      },
-      acceptSuggestionOnCommitCharacter: true,
-      acceptSuggestionOnEnter: "on",
-      accessibilitySupport: "on",
-      inlayHints: {
-        enabled: true,
-      },
-      lightbulb: {
-        enabled: true,
       },
     });
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, function () {
@@ -298,13 +280,8 @@ const Editor: React.FC<IEditorProps> = (props) => {
           // );
         },
         onSuccess: async (moduleMap) => {
-          // console.log(
-          //   "[COMPONENT](SuperEditor) - all module loaded",
-          //   moduleMap
-          // );
+          // console.log("[COMPONENT](SuperEditor) - all module loaded");
           setLoading(false);
-          // const url = 'https://typescript.azureedge.net/cdn/4.9.4/monaco/min/vs/language/typescript/tsWorker.js';
-          // await loadScript(url);
           modsRef.current = moduleMap;
           initializeEditor();
         },

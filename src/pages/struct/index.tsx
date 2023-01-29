@@ -1,14 +1,16 @@
 /**
- * @file JavaScript 在线执行
+ * @file json 转 interface or jsdoc
  */
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import cx from "classnames";
 import { Tab } from "@headlessui/react";
+import copy from "copy-to-clipboard";
+import message from "antd/es/message";
+import "antd/es/message/style/index";
 
-import { generateFn, safeInvokeWrap } from "@/utils";
 import { parse } from "@/utils/json/ast";
 import { useValue } from "@/hooks";
-import Editor from "@/components/SuperEditor";
+import LazyEditor from "@/components/LazyEditor";
 import { toJSONSchema } from "@/utils/json";
 import { jsonSchema2Interface, jsonSchema2JSDoc } from "@/utils/typescript";
 import { buildExampleCode } from "@/utils/typescript/example";
@@ -27,46 +29,75 @@ const ReplPage = () => {
   );
   // const [astJSON, setAstJSON] = useState("");
   // const [schemaJSON, setSchemaJSON] = useState("");
+  const interfaceRef = useRef("");
+  const jsdocRef = useRef("");
   const [interfaceStr, setInterfaceStr] = useState("");
   const [JSDocStr, setJSDocStr] = useState("");
 
   const convert = useCallback((codeString) => {
-    const language = "json";
-    const ast = parse(codeString);
-    // setAstJSON(JSON.stringify(ast, null, 2));
-    const schema = toJSONSchema(ast);
-    // setSchemaJSON(JSON.stringify(schema, null, 2));
-    const interStr = buildExampleCode(schema, {
-      language: "ts",
-    });
-    setInterfaceStr(interStr);
-    const jsdoc = buildExampleCode(schema, {
-      language: "js",
-    });
-    console.log(jsdoc);
-    setJSDocStr(jsdoc);
+    if (!codeString) {
+      return;
+    }
+    try {
+      const ast = parse(codeString);
+      const schema = toJSONSchema(ast);
+      interfaceRef.current = jsonSchema2Interface(schema);
+      jsdocRef.current = jsonSchema2JSDoc(schema);
+      const interStr = buildExampleCode(schema, {
+        language: "ts",
+      });
+      setInterfaceStr(interStr);
+      const jsdoc = buildExampleCode(schema, {
+        language: "js",
+      });
+      setJSDocStr(jsdoc);
+    } catch (err) {
+      alert(err.message);
+    }
   }, []);
 
   const elms: Record<string, React.ReactNode> = {
     "TypeScript interface": interfaceStr ? (
-      <div>
-        <Editor key="ts" language="typescript" defaultValue={interfaceStr} />
+      <div className="relative">
+        <LazyEditor key="ts" language="typescript" value={interfaceStr} />
+        <div
+          className="btn absolute right-10 top-4"
+          onClick={() => {
+            if (interfaceRef.current) {
+              copy(interfaceRef.current);
+              message.success("复制成功");
+            }
+          }}
+        >
+          复制
+        </div>
       </div>
     ) : null,
     JSDoc: JSDocStr ? (
-      <div>
-        <Editor key="js" language="javascript" defaultValue={JSDocStr} />
+      <div className="relative">
+        <LazyEditor key="js" language="javascript" value={JSDocStr} />
+        <div
+          className="btn absolute right-10 top-4"
+          onClick={() => {
+            if (jsdocRef.current) {
+              copy(jsdocRef.current);
+              message.success("复制成功");
+            }
+          }}
+        >
+          复制
+        </div>
       </div>
     ) : null,
-    Example: <div>Example</div>,
+    // Example: <div>Example</div>,
   };
 
   return (
     <div className="container m-auto space-y-6">
       <h1 className="text-3xl font-bold">Struct Converter</h1>
       <div className="mt-6">
-        <Editor
-          defaultValue={code as string}
+        <LazyEditor
+          value={code as string}
           language="json5"
           onChange={setCode}
         />

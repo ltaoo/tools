@@ -1,5 +1,6 @@
 /**
  * ast 树生成 json schema
+ * @todo 数组元素是对象，但是第一个对象的 a 和第二个对象的 a 的值不同，需要支持这种情况
  */
 import { AstNode, NodeTypes } from "./ast";
 
@@ -98,7 +99,12 @@ export function toJSONSchema(ast: AstNode) {
   }
   if (type === NodeTypes.Literal) {
     const node = {
-      type: typeof ast.value,
+      type: (() => {
+        if (ast.value === null) {
+          return "null";
+        }
+        return typeof ast.value;
+      })(),
     };
     // const description = getDescription(ast);
     // if (description) {
