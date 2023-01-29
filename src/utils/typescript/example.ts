@@ -1,4 +1,5 @@
 import {
+  ConverterLifetimes,
   generateArrayItemName,
   generateWhitespace,
   JSONSchema,
@@ -6,6 +7,7 @@ import {
   jsonSchema2JSDoc,
   JSONSchemaTypes,
   lowerFirstCase,
+  TypeNodePlugin,
 } from ".";
 import { DEFAULT_ROOT_KEY } from "./constants";
 
@@ -83,18 +85,17 @@ export function buildExampleCode(
   options: Partial<{
     rootKey: string;
     language: "ts" | "js";
+    lifetimes: ConverterLifetimes;
   }> = {}
 ) {
-  const { rootKey = DEFAULT_ROOT_KEY, language = "ts" } = options;
+  const { rootKey = DEFAULT_ROOT_KEY, language = "ts", lifetimes } = options;
   const exampleCode = printSchema(schema, "resp").map((line) => {
     return generateWhitespace(1) + line;
   });
   const generatedCode =
     language === "ts"
-      ? jsonSchema2Interface(schema, {
-          rootKey,
-        })
-      : jsonSchema2JSDoc(schema, { rootKey });
+      ? jsonSchema2Interface(schema, [rootKey], lifetimes)
+      : jsonSchema2JSDoc(schema, [rootKey], lifetimes);
 
   const codes = [
     generatedCode,

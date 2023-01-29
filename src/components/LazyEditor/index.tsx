@@ -83,14 +83,8 @@ const LazyEditor: React.FC<IEditorProps> = (props) => {
               enabled: true,
             },
           });
-          // editor.addCommand(
-          //   monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS,
-          //   function () {}
-          // );
           const model = editor.getModel();
-          // console.log("[COMPONENT]Editor model", model);
           model?.onDidChangeContent(() => {
-            //       console.log("[COMPONENT]Editor", model.getValue());
             if (onChangeRef.current) {
               onChangeRef.current(model.getValue());
             }
@@ -113,7 +107,7 @@ const LazyEditor: React.FC<IEditorProps> = (props) => {
     }
     if (value && vRef.current !== value) {
       vRef.current = value;
-      // editor.setValue(value);
+      editor.setValue(value);
     }
   }, [value]);
 

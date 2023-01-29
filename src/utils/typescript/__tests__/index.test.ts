@@ -4,7 +4,9 @@ import {
   JSONSchema,
   jsonSchema2Interface,
   jsonSchema2JSDoc,
+  JSONSchemaTypes,
 } from "..";
+import { jsEnumPlugin, tsEnumPlugin } from "../plugins/enum";
 
 describe("生成 typescript interface", () => {
   test("包含注释", () => {
@@ -199,6 +201,141 @@ describe("生成 typescript interface", () => {
     /** 想阅读 */
     string[]
   ];
+}`);
+  });
+
+  test("数组中包含不同类型的值", () => {
+    const schema = {
+      type: "object",
+      properties: {
+        name: {
+          type: "string",
+          description: "商品名称",
+        },
+        count: {
+          type: "number",
+          description: "商品数量",
+        },
+        onSale: {
+          type: "boolean",
+          description: "是否在售",
+        },
+        sku: {
+          type: "array",
+          items: {
+            type: "unknown",
+          },
+          description: "sku",
+        },
+        id: {
+          type: "number",
+          description: "sku id",
+        },
+        properties: {
+          type: "array",
+          items: [
+            {
+              type: "string",
+              description: "珠子尺寸",
+            },
+            {
+              type: "number",
+              description: "珠子数量",
+            },
+          ],
+          description: "规格",
+        },
+        price: {
+          type: "number",
+          description: "价格（单位分）",
+        },
+      },
+    };
+    const interfaceStr = jsonSchema2Interface(schema as JSONSchema);
+    expect(interfaceStr).toBe(`interface ResponseRoot {
+  /** 商品名称 */
+  name: string;
+  /** 商品数量 */
+  count: number;
+  /** 是否在售 */
+  onSale: boolean;
+  /** sku */
+  sku: unknown[];
+  /** sku id */
+  id: number;
+  /** 规格 */
+  properties: [
+    /** 珠子尺寸 */
+    string,
+    /** 珠子数量 */
+    number
+  ];
+  /** 价格（单位分） */
+  price: number;
+}`);
+  });
+
+  test("存在枚举", () => {
+    const schema = {
+      type: JSONSchemaTypes.Object,
+      properties: {
+        name: {
+          type: JSONSchemaTypes.String,
+          description: "商品名称",
+        },
+        count: {
+          type: JSONSchemaTypes.Number,
+          description: "商品数量",
+        },
+        status: {
+          type: JSONSchemaTypes.Number,
+          description:
+            "状态。1：在售(OnSale)；2：缺货(Missing)；3：售罄(SoldOut)；",
+        },
+        detail: {
+          type: JSONSchemaTypes.Object,
+          properties: {
+            inner: {
+              type: JSONSchemaTypes.Number,
+              description:
+                "测试。1：测试1(test1)；2：测试2(test2)；3：测试3(test3)；",
+            },
+          },
+        },
+      },
+    } as JSONSchema;
+    const result = jsonSchema2Interface(
+      schema,
+      ["ResponseRoot"],
+      tsEnumPlugin(/([0-9a-z]{1,})：([^\(]{1,})\({0,1}([^\)]{1,})\){0,1}；/)
+    );
+    expect(result).toStrictEqual(`enum ResponseRootStatus {
+  /** 在售 */
+  OnSale = 1,
+  /** 缺货 */
+  Missing = 2,
+  /** 售罄 */
+  SoldOut = 3,
+};
+enum ResponseRootDetailInner {
+  /** 测试1 */
+  test1 = 1,
+  /** 测试2 */
+  test2 = 2,
+  /** 测试3 */
+  test3 = 3,
+};
+interface ResponseRoot {
+  /** 商品名称 */
+  name: string;
+  /** 商品数量 */
+  count: number;
+  /** 状态。1：在售(OnSale)；2：缺货(Missing)；3：售罄(SoldOut)； */
+  status: ResponseRootStatus;
+  detail: {
+    /** 测试。1：测试1(test1)；2：测试2(test2)；3：测试3(test3)； */
+    inner: ResponseRootDetailInner;
+  };
 }`);
   });
 
@@ -428,6 +565,68 @@ describe("生成 JSDoc", () => {
  *
  * @typedef {object} ResponseRoot
  * @prop {FirstAnything[]} ResponseRoot.anything 元素均为对象
+ */`);
+  });
+
+  test("存在枚举", () => {
+    const schema = {
+      type: JSONSchemaTypes.Object,
+      properties: {
+        name: {
+          type: JSONSchemaTypes.String,
+          description: "商品名称",
+        },
+        count: {
+          type: JSONSchemaTypes.Number,
+          description: "商品数量",
+        },
+        status: {
+          type: JSONSchemaTypes.Number,
+          description:
+            "状态。1：在售(OnSale)；2：缺货(Missing)；3：售罄(SoldOut)；",
+        },
+        detail: {
+          type: JSONSchemaTypes.Object,
+          properties: {
+            inner: {
+              type: JSONSchemaTypes.Number,
+              description:
+                "测试。1：测试1(test1)；2：测试2(test2)；3：测试3(test3)；",
+            },
+          },
+        },
+      },
+    } as JSONSchema;
+    const result = jsonSchema2JSDoc(
+      schema,
+      ["ResponseRoot"],
+      jsEnumPlugin(/([0-9a-z]{1,})：([^\(]{1,})\({0,1}([^\)]{1,})\){0,1}；/)
+    );
+    expect(result).toStrictEqual(`/** @enum {number} */
+const ResponseRootStatus = {
+  /** 在售 */
+  OnSale: 1,
+  /** 缺货 */
+  Missing: 2,
+  /** 售罄 */
+  SoldOut: 3,
+};
+/** @enum {number} */
+const ResponseRootDetailInner = {
+  /** 测试1 */
+  test1: 1,
+  /** 测试2 */
+  test2: 2,
+  /** 测试3 */
+  test3: 3,
+};
+/**
+ * @typedef {object} ResponseRoot
+ * @prop {string} ResponseRoot.name 商品名称
+ * @prop {number} ResponseRoot.count 商品数量
+ * @prop {ResponseRootStatus} ResponseRoot.status 状态。1：在售(OnSale)；2：缺货(Missing)；3：售罄(SoldOut)；
+ * @prop {object} ResponseRoot.detail
+ * @prop {ResponseRootDetailInner} ResponseRoot.detail.inner 测试。1：测试1(test1)；2：测试2(test2)；3：测试3(test3)；
  */`);
   });
 });

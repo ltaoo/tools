@@ -7,6 +7,7 @@ export enum JSONSchemaTypes {
   Array = "array",
   Boolean = "boolean",
   Null = "null",
+  Enum = "enum",
   /** 数组没有元素，就会出现这种情况 */
   Unknown = "unknown",
 }
@@ -63,7 +64,20 @@ export type JSONSchema = MutableRecord<{
     /** 描述(相比标题可以更长，但作用是相同的) */
     description?: string;
   };
+  [JSONSchemaTypes.Enum]: {
+    enum: unknown[];
+    /** 标题 */
+    title?: string;
+    /** 描述(相比标题可以更长，但作用是相同的) */
+    description?: string;
+  };
   [JSONSchemaTypes.Null]: {
+    /** 标题 */
+    title?: string;
+    /** 描述(相比标题可以更长，但作用是相同的) */
+    description?: string;
+  };
+  [JSONSchemaTypes.Unknown]: {
     /** 标题 */
     title?: string;
     /** 描述(相比标题可以更长，但作用是相同的) */
@@ -71,6 +85,18 @@ export type JSONSchema = MutableRecord<{
   };
 }>;
 
+export type ConverterLifetimes = {
+  beforeOutput: () => string[];
+  afterOutput: () => string[];
+  typeNode: TypeNodePlugin;
+};
+export type TypeNodePlugin = (
+  node: JSONSchema,
+  {}: Partial<{
+    deep: number;
+    parentKeys: string[];
+  }>
+) => string;
 /**
  * 从 json schema 构建 interface，但是返回的是数组，每一个元素是一行内容
  * @param {JSONSchema} schema
@@ -79,27 +105,23 @@ export type JSONSchema = MutableRecord<{
  */
 export function buildInterfaceLines(
   schema: JSONSchema,
-  deep: number = 0
+  parentKeys: string[] = [DEFAULT_ROOT_KEY],
+  deep: number = 0,
+  options: Partial<ConverterLifetimes> = {}
 ): string | string[] {
   const { type } = schema;
-  if (type === JSONSchemaTypes.String) {
-    return `string`;
-  }
-  if (type === JSONSchemaTypes.Number) {
-    return `number`;
-  }
-  if (type === JSONSchemaTypes.Boolean) {
-    return `boolean`;
-  }
-  if (type === JSONSchemaTypes.Null) {
-    return `null`;
-  }
+  const { typeNode } = options;
   if (type === JSONSchemaTypes.Object) {
     const { properties } = schema;
     const propertySignatures = Object.keys(properties).map((key) => {
       const property = properties[key];
       const propertyDeep = deep + 1;
-      let value = buildInterfaceLines(property, propertyDeep);
+      let value = buildInterfaceLines(
+        property,
+        parentKeys.concat(key),
+        propertyDeep,
+        options
+      );
       const comments = buildCommentFromDescription(property.description);
       let keyAndValue: string | string[] = `${key}: ${value}`;
       if (Array.isArray(value)) {
@@ -136,7 +158,7 @@ export function buildInterfaceLines(
       const s = generateWhitespace(1);
       const childNodes = items
         .map((item) => {
-          const line = buildInterfaceLines(item, nextDeep);
+          const line = buildInterfaceLines(item, parentKeys, nextDeep, options);
           const c = buildCommentFromDescription(item.description);
           if (Array.isArray(line)) {
             return c.concat(line);
@@ -159,13 +181,24 @@ export function buildInterfaceLines(
         });
       return ["[", ...childNodes, "]"];
     }
-    const originalLines = buildInterfaceLines(items, nextDeep);
+    const originalLines = buildInterfaceLines(
+      items,
+      parentKeys,
+      nextDeep,
+      options
+    );
     if (Array.isArray(originalLines)) {
       return addStrAtEndOfArrayItem(originalLines, "[]");
     }
     return `${originalLines}[]`;
   }
-  return "unknown type";
+  if (typeNode) {
+    return typeNode(schema, {
+      deep: deep,
+      parentKeys,
+    });
+  }
+  return type;
 }
 
 function addStrAtEndOfArrayItem(arr: string[], str: string) {
@@ -179,24 +212,30 @@ function addStrAtEndOfArrayItem(arr: string[], str: string) {
  */
 export function jsonSchema2Interface(
   schema: JSONSchema,
-  options: Partial<{
-    rootKey: string;
-  }> = {}
+  parentKeys: string[] = [DEFAULT_ROOT_KEY],
+  options: Partial<ConverterLifetimes> = {}
 ): string {
-  const { rootKey = DEFAULT_ROOT_KEY } = options;
-  const result = buildInterfaceLines(schema);
+  const { typeNode, beforeOutput = () => [], afterOutput = () => [] } = options;
+  const result = buildInterfaceLines(schema, parentKeys, 0, {
+    typeNode,
+  });
+  const preLines = beforeOutput();
+  const postLines = afterOutput();
   if (Array.isArray(result)) {
     if (result[0] === "{") {
-      return [`interface ${rootKey} ${result[0]}`]
+      return preLines
+        .concat([`interface ${parentKeys.join(".")} ${result[0]}`])
         .concat(result.slice(1))
+        .concat(postLines)
         .join("\n");
     }
-    return result.join("\n");
+    return preLines.concat(result).concat(postLines).join("\n");
   }
   return result;
 }
 
-let extraTypes: string[] = [];
+let extraJSDocLines: string[] = [];
+
 /**
  * JSON schema 转 typescript js doc
  * @param {JSONSchema} schema
@@ -206,41 +245,10 @@ let extraTypes: string[] = [];
 export function buildJSDocLines(
   schema: JSONSchema,
   parentKeys: string[] = ["ResponseRoot"],
-  deep: number = 0
+  deep: number = 0,
+  options: Partial<ConverterLifetimes> = {}
 ): string | string[] {
-  const { type, description } = schema;
-  if (type === JSONSchemaTypes.String) {
-    return "string";
-    // let s = ` * @prop {string} ${parentKeys.join(".")}`;
-    // if (description) {
-    //   return s + ` ${description}`;
-    // }
-    // return s;
-  }
-  if (type === JSONSchemaTypes.Number) {
-    return "number";
-    // let s = ` * @prop {number} ${parentKeys.join(".")}`;
-    // if (description) {
-    //   return s + ` ${description}`;
-    // }
-    // return s;
-  }
-  if (type === JSONSchemaTypes.Boolean) {
-    return "boolean";
-    // let s = ` * @prop {boolean} ${parentKeys.join(".")}`;
-    // if (description) {
-    //   return s + ` ${description}`;
-    // }
-    // return s;
-  }
-  if (type === JSONSchemaTypes.Null) {
-    return "null";
-    // let s = ` * @prop {null} ${parentKeys.join(".")}`;
-    // if (description) {
-    //   return s + ` ${description}`;
-    // }
-    // return s;
-  }
+  const { type } = schema;
   if (type === JSONSchemaTypes.Object) {
     const { properties, description } = schema;
     const propertySignatures = Object.keys(properties)
@@ -251,7 +259,8 @@ export function buildJSDocLines(
         const value = buildJSDocLines(
           property,
           parentKeys.concat([key]),
-          deep + 1
+          deep + 1,
+          options
         );
         // console.log("[](jsonSchema2JSDoc) - created property", key, value);
         // 如果是数组，说明返回的是一个对象/数组的声明
@@ -305,7 +314,7 @@ export function buildJSDocLines(
           deep + 1
         );
         if (Array.isArray(lines) && lines[0] === "Object") {
-          extraTypes.push(...lines.slice(2));
+          extraJSDocLines.push(...lines.slice(2));
           return lines[1];
         }
         return lines;
@@ -315,12 +324,13 @@ export function buildJSDocLines(
     const value = buildJSDocLines(
       items,
       [generateArrayItemName(0, parentKeys)],
-      deep + 1
+      deep + 1,
+      options
     );
     // console.log("[]() same type in array, so the value is", value);
     if (Array.isArray(value)) {
       if (Array.isArray(value) && value[0] === "Object") {
-        extraTypes.push(...value.slice(2));
+        extraJSDocLines.push(...value.slice(2));
         return `${value[1]}[]`;
       }
       return value;
@@ -328,7 +338,13 @@ export function buildJSDocLines(
     const s = `${value}[]`;
     return s;
   }
-  return "unknown";
+  if (options.typeNode) {
+    return options.typeNode(schema, {
+      deep: deep,
+      parentKeys,
+    });
+  }
+  return type;
 }
 
 /**
@@ -337,26 +353,31 @@ export function buildJSDocLines(
  */
 export function jsonSchema2JSDoc(
   schema: JSONSchema,
+  parentKeys: string[] = [DEFAULT_ROOT_KEY],
   /** 额外配置 */
-  options: Partial<{
-    /** 根名称 */
-    rootKey: string;
-  }> = {}
+  options: Partial<ConverterLifetimes> = {}
 ) {
-  const { rootKey = "ResponseRoot" } = options;
-  extraTypes = [];
-  const lines = buildJSDocLines(schema, [rootKey]);
-  // console.log("[](jsonSchema2JSDoc) result lines", lines, extraTypes);
+  const { typeNode, beforeOutput = () => [], afterOutput = () => [] } = options;
+  extraJSDocLines = [];
+  const lines = buildJSDocLines(schema, parentKeys, 0, {
+    typeNode,
+  });
+  const preLines = beforeOutput();
+  const postLines = afterOutput();
+  // console.log("[](jsonSchema2JSDoc) result lines", preLines);
   const prefixLines = (() => {
-    if (extraTypes.length === 0) {
+    if (extraJSDocLines.length === 0) {
       return [];
     }
-    return extraTypes.concat(" *");
+    return extraJSDocLines.concat(" *");
   })();
   if (Array.isArray(lines)) {
-    return ["/**", ...prefixLines.concat(lines), " */"].join("\n");
+    return preLines
+      .concat(["/**", ...prefixLines.concat(lines), " */"])
+      .concat(postLines)
+      .join("\n");
   }
-  return ["/**", lines, " */"].join("\n");
+  return preLines.concat(["/**", lines, " */"]).concat(postLines).join("\n");
 }
 
 /**

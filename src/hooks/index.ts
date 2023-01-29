@@ -78,3 +78,56 @@ export function useLatestValue(value: any) {
 
   return ref;
 }
+interface IMemory {
+  id: number;
+  content: string;
+}
+export function useHistoryRecords(key: string): [
+  IMemory[],
+  {
+    push: (content: string) => void;
+    remove: (id: number) => void;
+  }
+] {
+  function getMemories(): IMemory[] {
+    return JSON.parse(localStorage.getItem(key) || "[]");
+  }
+  function updateMemories(nextMemories: IMemory[]) {
+    return localStorage.setItem(key, JSON.stringify(nextMemories));
+  }
+  const [records, setRecords] = useState<IMemory[]>(getMemories());
+  return [
+    records,
+    {
+      push(content: string) {
+        if (!content) {
+          alert("请输入暂存内容");
+          return;
+        }
+        const timestamp = new Date().valueOf();
+        const hasSameRegexpAndCase = records.find((memory) => {
+          if (memory.content === content) {
+            return true;
+          }
+          return false;
+        });
+        if (hasSameRegexpAndCase) {
+          alert("已经有相同的暂存内容了");
+          return;
+        }
+        const memory = {
+          id: timestamp,
+          content,
+        };
+        const nextMemories = [memory, ...records];
+        setRecords(nextMemories);
+        updateMemories(nextMemories);
+      },
+      remove(id: number) {
+        const nextMemories = records.filter((memory) => memory.id !== id);
+        updateMemories(nextMemories);
+        setRecords(nextMemories);
+      },
+    },
+  ];
+}

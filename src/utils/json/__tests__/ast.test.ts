@@ -1138,7 +1138,6 @@ describe("包含注释", () => {
     	], // 数组的行末注释
     }`;
     const result = parse(jsonStr);
-    //     console.log(JSON.stringify(result, null, 2));
     expect(result).toStrictEqual({
       type: NodeTypes.Object,
       children: [
@@ -1320,6 +1319,200 @@ describe("包含注释", () => {
             {
               type: NodeTypes.SingleLineComment,
               text: "// 数组的行末注释",
+            },
+          ],
+        },
+      ],
+    });
+  });
+  test("数组元素有注释", () => {
+    const jsonStr = `{
+  "name": "精品紫檀好料", // 商品名称
+  "count": 100, // 商品数量
+  "onSale": true, // 是否在售
+  "sku": [ // sku
+  ],
+  "id": 1, // sku id
+  "properties": [  // 规格
+    "2.0", // 珠子尺寸
+    20 // 珠子数量
+  ],
+  "price": 1899 // 价格（单位分）
+}`;
+    const ast = parse(jsonStr);
+    expect(ast).toStrictEqual({
+      type: NodeTypes.Object,
+      children: [
+        {
+          type: NodeTypes.Property,
+          key: {
+            type: NodeTypes.Identifier,
+            value: "name",
+            raw: "name",
+          },
+          value: {
+            type: NodeTypes.Literal,
+            value: "精品紫檀好料",
+            raw: "精品紫檀好料",
+            leadingComments: [],
+            trailingComments: [],
+          },
+          leadingComments: [],
+          trailingComments: [
+            {
+              type: NodeTypes.SingleLineComment,
+              text: "// 商品名称",
+            },
+          ],
+        },
+        {
+          type: NodeTypes.Property,
+          key: {
+            type: NodeTypes.Identifier,
+            value: "count",
+            raw: "count",
+          },
+          value: {
+            type: NodeTypes.Literal,
+            value: 100,
+            raw: "100",
+            leadingComments: [],
+            trailingComments: [],
+          },
+          leadingComments: [],
+          trailingComments: [
+            {
+              type: NodeTypes.SingleLineComment,
+              text: "// 商品数量",
+            },
+          ],
+        },
+        {
+          type: NodeTypes.Property,
+          key: {
+            type: NodeTypes.Identifier,
+            value: "onSale",
+            raw: "onSale",
+          },
+          value: {
+            type: NodeTypes.Literal,
+            value: true,
+            raw: "true",
+            leadingComments: [],
+            trailingComments: [],
+          },
+          leadingComments: [],
+          trailingComments: [
+            {
+              type: NodeTypes.SingleLineComment,
+              text: "// 是否在售",
+            },
+          ],
+        },
+        {
+          type: NodeTypes.Property,
+          key: {
+            type: NodeTypes.Identifier,
+            value: "sku",
+            raw: "sku",
+          },
+          value: {
+            type: NodeTypes.Array,
+            children: [],
+          },
+          leadingComments: [],
+          trailingComments: [
+            {
+              type: NodeTypes.SingleLineComment,
+              text: "// sku",
+            },
+          ],
+        },
+        {
+          type: NodeTypes.Property,
+          key: {
+            type: NodeTypes.Identifier,
+            value: "id",
+            raw: "id",
+          },
+          value: {
+            type: NodeTypes.Literal,
+            value: 1,
+            raw: "1",
+            leadingComments: [],
+            trailingComments: [],
+          },
+          leadingComments: [],
+          trailingComments: [
+            {
+              type: NodeTypes.SingleLineComment,
+              text: "// sku id",
+            },
+          ],
+        },
+        {
+          type: NodeTypes.Property,
+          key: {
+            type: NodeTypes.Identifier,
+            value: "properties",
+            raw: "properties",
+          },
+          value: {
+            type: NodeTypes.Array,
+            children: [
+              {
+                type: NodeTypes.Literal,
+                value: "2.0",
+                raw: "2.0",
+                leadingComments: [],
+                trailingComments: [
+                  {
+                    type: NodeTypes.SingleLineComment,
+                    text: "// 珠子尺寸",
+                  },
+                ],
+              },
+              {
+                type: NodeTypes.Literal,
+                value: 20,
+                raw: "20",
+                leadingComments: [],
+                trailingComments: [
+                  {
+                    type: NodeTypes.SingleLineComment,
+                    text: "// 珠子数量",
+                  },
+                ],
+              },
+            ],
+          },
+          leadingComments: [],
+          trailingComments: [
+            {
+              type: NodeTypes.SingleLineComment,
+              text: "// 规格",
+            },
+          ],
+        },
+        {
+          type: NodeTypes.Property,
+          key: {
+            type: NodeTypes.Identifier,
+            value: "price",
+            raw: "price",
+          },
+          value: {
+            type: NodeTypes.Literal,
+            value: 1899,
+            raw: "1899",
+            leadingComments: [],
+            trailingComments: [],
+          },
+          leadingComments: [],
+          trailingComments: [
+            {
+              type: NodeTypes.SingleLineComment,
+              text: "// 价格（单位分）",
             },
           ],
         },

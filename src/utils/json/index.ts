@@ -2,6 +2,7 @@
  * ast 树生成 json schema
  * @todo 数组元素是对象，但是第一个对象的 a 和第二个对象的 a 的值不同，需要支持这种情况
  */
+import { JSONSchema, JSONSchemaTypes } from "../typescript";
 import { AstNode, NodeTypes } from "./ast";
 
 /**
@@ -41,66 +42,85 @@ function isNotSameType(astList: AstNode[]) {
   });
 }
 
-// @ts-ignore
-export function toJSONSchema(ast: AstNode) {
+export function toJSONSchema(
+  ast: AstNode,
+  options: Partial<{
+    visit: Partial<{
+      value: (v: JSONSchema) => JSONSchema;
+    }>;
+  }> = {}
+) {
   const { type } = ast;
   if (type === NodeTypes.Object) {
     const { children } = ast;
-    // @ts-ignore
     const node = {
-      type: "object",
-      properties: children.map(toJSONSchema).reduce((prev, total) => {
-        return {
-          ...prev,
-          ...total,
-        };
-      }, {}),
-    };
-    // const description = getDescription(ast);
-    // if (description) {
-    //   node.description = description;
-    // }
+      type: JSONSchemaTypes.Object,
+      properties: children
+        .map((c) => {
+          const node = toJSONSchema(c, options);
+          // 这里的 node 是 { [key]: JSONSchema } 结果
+          return node;
+        })
+        .reduce((prev, total) => {
+          return {
+            ...prev,
+            ...total,
+          };
+        }, {}),
+    } as JSONSchema;
     return node;
   }
   if (type === NodeTypes.Array) {
     const { children } = ast;
     const childrenIsNotSameType = isNotSameType(children);
     // console.log("[](toJSONSchema) - array", children, childrenIsNotSameType);
-    // @ts-ignore
     const node = {
-      type: "array",
-      // @ts-ignore
+      type: JSONSchemaTypes.Array,
       items: (() => {
         if (childrenIsNotSameType) {
-          return children.map(toJSONSchema);
+          const childrenTypes = children.map((child) => {
+            const node = toJSONSchema(child, options);
+            const d = getDescription(child);
+            if (d) {
+              node.description = d;
+            }
+            return node;
+          });
+          return childrenTypes;
         }
         if (children.length === 0) {
-          return {
-            type: "unknown",
-          };
+          const node = {
+            type: JSONSchemaTypes.Unknown,
+          } as JSONSchema;
+          return node;
         }
-        return toJSONSchema(children[0]);
+        const node = toJSONSchema(children[0], options);
+        return node;
       })(),
-    };
-    // const description = getDescription(ast);
-    // if (description) {
-    //   node.description = description;
-    // }
+    } as JSONSchema;
     return node;
   }
   if (type === NodeTypes.Property) {
     const { key, value } = ast;
     // @ts-ignore
+    const k = key.value;
     const node = {
-      // @ts-ignore
-      [key.value]: {
-        ...toJSONSchema(value),
+      [k]: {
+        ...(() => {
+          const n = toJSONSchema(value, options);
+
+          return n;
+        })(),
       },
-    };
+    } as JSONSchema;
     const description = getDescription(ast);
     if (description) {
       // @ts-ignore
-      node[key.value].description = description;
+      node[k].description = description;
+    }
+    if (options.visit?.value) {
+      // @ts-ignore
+      node[k] = options.visit?.value(node[k]);
     }
     return node;
   }
@@ -108,18 +128,17 @@ export function toJSONSchema(ast: AstNode) {
     const node = {
       type: (() => {
         if (ast.value === null) {
-          return "null";
+          return JSONSchemaTypes.Null;
         }
         return typeof ast.value;
       })(),
-    };
-    // const description = getDescription(ast);
-    // if (description) {
-    //   node.description = description;
-    // }
+    } as JSONSchema;
     return node;
   }
-  return null;
+  const node = {
+    type: JSONSchemaTypes.Unknown,
+  } as JSONSchema;
+  return node;
 }
 
 function getDescription(ast: AstNode) {

@@ -9,11 +9,12 @@ import message from "antd/es/message";
 import "antd/es/message/style/index";
 
 import { parse } from "@/utils/json/ast";
-import { useValue } from "@/hooks";
+import { useHistoryRecords, useValue } from "@/hooks";
 import LazyEditor from "@/components/LazyEditor";
 import { toJSONSchema } from "@/utils/json";
 import { jsonSchema2Interface, jsonSchema2JSDoc } from "@/utils/typescript";
 import { buildExampleCode } from "@/utils/typescript/example";
+import { jsEnumPlugin, tsEnumPlugin } from "@/utils/typescript/plugins/enum";
 
 const ReplPage = () => {
   const [code, setCode] = useValue(
@@ -27,8 +28,8 @@ const ReplPage = () => {
       },
     }
   );
-  // const [astJSON, setAstJSON] = useState("");
-  // const [schemaJSON, setSchemaJSON] = useState("");
+  const [records, recordManage] = useHistoryRecords("struct-page");
+  const codeRef = useRef(code);
   const interfaceRef = useRef("");
   const jsdocRef = useRef("");
   const [interfaceStr, setInterfaceStr] = useState("");
@@ -41,14 +42,27 @@ const ReplPage = () => {
     try {
       const ast = parse(codeString);
       const schema = toJSONSchema(ast);
-      interfaceRef.current = jsonSchema2Interface(schema);
-      jsdocRef.current = jsonSchema2JSDoc(schema);
+      const regexp = /([0-9a-z]{1,})：([^\(]{1,})\({0,1}([^\)]{1,})\){0,1}；/;
+      const tsLifetimes = tsEnumPlugin(regexp);
+      const jsLifetimes = jsEnumPlugin(regexp);
+      interfaceRef.current = jsonSchema2Interface(
+        schema,
+        ["ResponseRoot"],
+        tsLifetimes
+      );
+      jsdocRef.current = jsonSchema2JSDoc(
+        schema,
+        ["ResponseRoot"],
+        jsLifetimes
+      );
       const interStr = buildExampleCode(schema, {
         language: "ts",
+        lifetimes: tsLifetimes,
       });
       setInterfaceStr(interStr);
       const jsdoc = buildExampleCode(schema, {
         language: "js",
+        lifetimes: jsLifetimes,
       });
       setJSDocStr(jsdoc);
     } catch (err) {
@@ -90,7 +104,48 @@ const ReplPage = () => {
         </div>
       </div>
     ) : null,
-    // Example: <div>Example</div>,
+    History: (
+      <div>
+        <div className="mt-2 space-y-4 max-h-36 overflow-y-auto">
+          {records.map((memory) => {
+            const { id, content } = memory;
+            return (
+              <div key={id} className="">
+                <div className="py-2 px-4 bg-gray-100 rounded">
+                  <div>{content}</div>
+                  <div className="flex items-center justify-between mt-4">
+                    <div className="text-gray-400">
+                      <span>{new Date(id).toLocaleDateString()}</span>
+                      <span className="ml-4">
+                        {new Date(id).toLocaleTimeString()}
+                      </span>
+                    </div>
+                    <div className="space-x-2">
+                      <button
+                        className="py-1 px-2 text-sm rounded bg-gray-800 text-white"
+                        onClick={() => {
+                          setCode(content);
+                        }}
+                      >
+                        使用
+                      </button>
+                      <button
+                        className="py-1 px-2 text-sm rounded bg-gray-800 text-white"
+                        onClick={() => {
+                          recordManage.remove(id);
+                        }}
+                      >
+                        删除
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    ),
   };
 
   return (
@@ -100,16 +155,29 @@ const ReplPage = () => {
         <LazyEditor
           value={code as string}
           language="json5"
-          onChange={setCode}
+          onChange={(nextCode) => {
+            codeRef.current = nextCode;
+            localStorage.setItem("struct", nextCode);
+          }}
         />
         <div className="mt-4">
-          <div
-            className="mt-2 btn btn--large btn--primary"
-            onClick={() => {
-              convert(code);
-            }}
-          >
-            转换
+          <div className="flex space-2">
+            <div
+              className="mt-2 btn btn--large btn--primary"
+              onClick={() => {
+                convert(codeRef.current);
+              }}
+            >
+              转换
+            </div>
+            <div
+              className="mt-2 btn btn--large btn--primary"
+              onClick={() => {
+                recordManage.push(codeRef.current);
+              }}
+            >
+              暂存
+            </div>
           </div>
         </div>
         <div className="mt-4">
