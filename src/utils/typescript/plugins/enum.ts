@@ -44,7 +44,10 @@ export function tsEnumPlugin(regexp: RegExp) {
     typeNode(node, options) {
       const { type, description } = node;
       const { parentKeys = [] } = options;
-      const isEnum = !description || regexp.test(description);
+      if (!description) {
+        return type;
+      }
+      const isEnum = regexp.test(description);
       // console.log("[PLUGIN](ExtraEnum)", isEnum, type, parentKeys);
       if (!isEnum) {
         return type;
@@ -84,7 +87,10 @@ export function jsEnumPlugin(regexp: RegExp) {
     typeNode: (node, options) => {
       const { type, description } = node;
       const { parentKeys = [] } = options;
-      const isEnum = !description || regexp.test(description);
+      if (!description) {
+        return type;
+      }
+      const isEnum = regexp.test(description);
       // console.log("[PLUGIN](ExtraEnum)", isEnum, type, parentKeys);
       if (!isEnum) {
         return type;
@@ -103,10 +109,9 @@ export function jsEnumPlugin(regexp: RegExp) {
           );
         })
         .reduce((prev, total) => prev.concat(total), [] as string[]);
+      const t = enums[0] ? typeof enums[0].value : "number";
       extraLines = extraLines.concat(
-        [`/** @enum {${typeof enums[0].value}} */`, `const ${n} = {`]
-          .concat(lines)
-          .concat(["};"])
+        [`/** @enum {${t}} */`, `const ${n} = {`].concat(lines).concat(["};"])
       );
       return n;
     },
