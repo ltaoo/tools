@@ -20,6 +20,7 @@ const RegexpBuildPage = React.lazy(() => import("@/pages/regexp-build"));
 const BookSourceBuildPage = React.lazy(() => import("@/pages/book-source"));
 const ImageCreatePage = React.lazy(() => import("@/pages/create-img"));
 const StructConverterPage = React.lazy(() => import("@/pages/struct"));
+const TestPage = React.lazy(() => import("@/pages/test"));
 
 const loading = <div>Loading</div>;
 
@@ -98,6 +99,14 @@ ReactDOM.render(
             element={
               <React.Suspense fallback={loading}>
                 <StructConverterPage />
+              </React.Suspense>
+            }
+          />
+          <Route
+            path="/test"
+            element={
+              <React.Suspense fallback={loading}>
+                <TestPage />
               </React.Suspense>
             }
           />
