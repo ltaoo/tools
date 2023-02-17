@@ -38,6 +38,10 @@ const links = [
     name: "数据结构转换",
     to: "/struct-convert",
   },
+  {
+    name: "URL search 解析",
+    to: "/url-search",
+  },
 ];
 
 const BasicLayout = () => {

@@ -404,10 +404,10 @@ describe("生成 JSDoc", () => {
     const interfaceStr = jsonSchema2JSDoc(schema as JSONSchema);
     expect(interfaceStr).toBe(`/**
  * @typedef {object} ResponseRoot
- * @prop {object} ResponseRoot.data 字段名最好是驼峰格式，不要返回没有用的字段。data只能是object类型
- * @prop {number} ResponseRoot.data.orderNo 单号
- * @prop {boolean} ResponseRoot.success
- * @prop {string[]} ResponseRoot.itemImgs 图片列表
+ * @prop {object} data 字段名最好是驼峰格式，不要返回没有用的字段。data只能是object类型
+ * @prop {number} data.orderNo 单号
+ * @prop {boolean} success
+ * @prop {string[]} itemImgs 图片列表
  */`);
   });
 
@@ -454,13 +454,13 @@ describe("生成 JSDoc", () => {
     const interfaceStr = jsonSchema2JSDoc(schema as JSONSchema);
     expect(interfaceStr).toBe(`/**
  * @typedef {object} ResponseRoot
- * @prop {object} ResponseRoot.data 字段名最好是驼峰格式，不要返回没有用的字段。data只能是object类型
- * @prop {number} ResponseRoot.data.orderNo 单号
- * @prop {object} ResponseRoot.data.person 参与者
- * @prop {string} ResponseRoot.data.person.name 姓名
- * @prop {object} ResponseRoot.data.person.habits 爱好
- * @prop {boolean} ResponseRoot.data.person.habits.sleep 睡觉
- * @prop {boolean} ResponseRoot.success
+ * @prop {object} data 字段名最好是驼峰格式，不要返回没有用的字段。data只能是object类型
+ * @prop {number} data.orderNo 单号
+ * @prop {object} data.person 参与者
+ * @prop {string} data.person.name 姓名
+ * @prop {object} data.person.habits 爱好
+ * @prop {boolean} data.person.habits.sleep 睡觉
+ * @prop {boolean} success
  */`);
   });
 
@@ -525,13 +525,13 @@ describe("生成 JSDoc", () => {
     const interfaceStr = jsonSchema2JSDoc(schema as JSONSchema);
     expect(interfaceStr).toBe(`/**
  * @typedef {object} FourthAnything 更多1
- * @prop {string[]} FourthAnything.books 正在阅读
+ * @prop {string[]} books 正在阅读
  *
  * @typedef {object} ResponseRoot
- * @prop {object} ResponseRoot.data 字段名最好是驼峰格式，不要返回没有用的字段。data只能是object类型
- * @prop {number} ResponseRoot.data.orderNo 单号
- * @prop {boolean} ResponseRoot.success
- * @prop {[string, number, boolean, FourthAnything, string[]]} ResponseRoot.anything 包含各种类型数据
+ * @prop {object} data 字段名最好是驼峰格式，不要返回没有用的字段。data只能是object类型
+ * @prop {number} data.orderNo 单号
+ * @prop {boolean} success
+ * @prop {[string, number, boolean, FourthAnything, string[]]} anything 包含各种类型数据
  */`);
   });
 
@@ -561,10 +561,10 @@ describe("生成 JSDoc", () => {
     const interfaceStr = jsonSchema2JSDoc(schema as JSONSchema);
     expect(interfaceStr).toBe(`/**
  * @typedef {object} FirstAnything 更多1
- * @prop {string[]} FirstAnything.books 正在阅读
+ * @prop {string[]} books 正在阅读
  *
  * @typedef {object} ResponseRoot
- * @prop {FirstAnything[]} ResponseRoot.anything 元素均为对象
+ * @prop {FirstAnything[]} anything 元素均为对象
  */`);
   });
 
@@ -622,11 +622,11 @@ const ResponseRootDetailInner = {
 };
 /**
  * @typedef {object} ResponseRoot
- * @prop {string} ResponseRoot.name 商品名称
- * @prop {number} ResponseRoot.count 商品数量
- * @prop {ResponseRootStatus} ResponseRoot.status 状态。1：在售(OnSale)；2：缺货(Missing)；3：售罄(SoldOut)；
- * @prop {object} ResponseRoot.detail
- * @prop {ResponseRootDetailInner} ResponseRoot.detail.inner 测试。1：测试1(test1)；2：测试2(test2)；3：测试3(test3)；
+ * @prop {string} name 商品名称
+ * @prop {number} count 商品数量
+ * @prop {ResponseRootStatus} status 状态。1：在售(OnSale)；2：缺货(Missing)；3：售罄(SoldOut)；
+ * @prop {object} detail
+ * @prop {ResponseRootDetailInner} detail.inner 测试。1：测试1(test1)；2：测试2(test2)；3：测试3(test3)；
  */`);
   });
 });
