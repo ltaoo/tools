@@ -8,8 +8,11 @@ import { useValue } from "@/hooks";
 const DayjsTestPage = () => {
   const [value, setValue] = useState("");
   const [result, setResult] = useState("");
+  const [compareResult, setCompareResult] = useState<string[]>([]);
 
   const [date, setDate] = useValue("" + new Date());
+  const [d1, setD1] = useValue("" + new Date());
+  const [d2, setD2] = useValue("" + new Date());
 
   const format = useCallback((timestamp) => {
     if (!timestamp) {
@@ -21,6 +24,21 @@ const DayjsTestPage = () => {
     }
     const res = dayjs(Number(timestamp)).format("YYYY-MM-DD HH:mm:ss");
     setResult(res);
+  }, []);
+
+  const compare = useCallback((d1, d2) => {
+    const day1 = dayjs(d1);
+    const day2 = dayjs(d2);
+
+    const day1Local = dayjs(d1).format("YYYY-MM-DD HH:mm:ss");
+    const day2Local = dayjs(d2).format("YYYY-MM-DD HH:mm:ss");
+
+    const text = [
+      `${day1Local} is after ${day2Local}? ${day1.isAfter(day2)}`,
+      `${day1Local} is before ${day2Local}? ${day1.isBefore(day2)}`,
+    ];
+
+    setCompareResult(text);
   }, []);
 
   return (
@@ -73,6 +91,34 @@ const DayjsTestPage = () => {
                 : null}
             </div>
           </div>
+        </div>
+        <h2 className="mt-8 text-xl font-bold">时间比较</h2>
+        <div className="mt-2 flex space-x-2">
+          <input
+            className="input w-120"
+            type="datetime"
+            value={d1}
+            onChange={setD1}
+          />
+          <input
+            className="input w-120"
+            type="datetime"
+            value={d2}
+            onChange={setD2}
+          />
+          <button
+            className="btn btn--primary"
+            onClick={() => {
+              compare(d1, d2);
+            }}
+          >
+            比较
+          </button>
+        </div>
+        <div>
+          {compareResult.map((t, i) => {
+            return <div key={i}>{t}</div>;
+          })}
         </div>
       </div>
     </div>
