@@ -117,20 +117,20 @@ const RegexpTestPage = () => {
           替换
         </button>
       </div>
-      <div className="panel flex space-x-8">
+      <div className="panel grid grid-cols-2 space-x-8">
         <div className="flex-1">
           <p>共找到{matches.length}处匹配</p>
-          <div className="matches min-h-24 mt-2 py-2 px-4 space-y-2 bg-gray-100 rounded">
+          <div className="matches min-h-24 max-h-78 overflow-y-auto mt-2 py-2 px-4 space-y-2 bg-gray-100 rounded">
             {matches.map((match, i) => {
-              return <div key={i}>{match}</div>;
+              return <div key={i} className="break-all">{match}</div>;
             })}
           </div>
         </div>
         <div className="flex-1">
           <p className="">捕获组</p>
-          <div className="matches min-h-24 mt-2 py-2 px-4 space-y-2 bg-gray-100 rounded">
+          <div className="matches min-h-24 max-h-78 overflow-y-auto mt-2 py-2 px-4 space-y-2 bg-gray-100 rounded">
             {groups.map((group, i) => {
-              return <div key={i}>{group}</div>;
+              return <div key={i} className="break-all">{group}</div>;
             })}
           </div>
         </div>
