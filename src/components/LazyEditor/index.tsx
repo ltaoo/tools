@@ -3,7 +3,8 @@
  */
 import React, { useEffect, useRef, useState } from "react";
 import type * as monaco from "monaco-editor";
-import { loadScript } from "@/utils";
+
+import { loadScript } from "@/utils/index";
 
 interface IEditorProps {
   value?: string;
@@ -35,7 +36,8 @@ const LazyEditor: React.FC<IEditorProps> = (props) => {
         return;
       }
       await loadScript(
-        "https://cdn.bootcdn.net/ajax/libs/require.js/2.3.6/require.js"
+        // "https://cdn.bootcdn.net/ajax/libs/require.js/2.3.6/require.js"
+        "https://static.funzm.com/assets/libs/require.js/2.3.6/require.js"
       );
       // @ts-ignore
       if (window.requirejs === undefined) {
@@ -48,7 +50,7 @@ const LazyEditor: React.FC<IEditorProps> = (props) => {
       // @ts-ignore
       requirejs.config({
         paths: {
-          vs: "https://typescript.azureedge.net/cdn/4.9.4/monaco/min/vs",
+          vs: "https://static.funzm.com/assets/monaco/4.9.4/min/vs",
         },
         ignoreDuplicateModules: ["vs/editor/editor.main"],
       });

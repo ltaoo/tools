@@ -11,7 +11,7 @@ import "./global.css";
 
 const ProfilePage = React.lazy(() => import("@/pages/profile"));
 const DayjsTestPage = React.lazy(() => import("@/pages/dayjs"));
-const ReplPage = React.lazy(() => import("@/pages/repl"));
+// const ReplPage = React.lazy(() => import("@/pages/repl"));
 const RegexpTestPage = React.lazy(() => import("@/pages/regexp"));
 const RegexpChallengePage = React.lazy(
   () => import("@/pages/regexp-challenge")
@@ -21,7 +21,6 @@ const BookSourceBuildPage = React.lazy(() => import("@/pages/book-source"));
 const ImageCreatePage = React.lazy(() => import("@/pages/create-img"));
 const StructConverterPage = React.lazy(() => import("@/pages/struct"));
 const URLSearchParsePage = React.lazy(() => import("@/pages/query"));
-const TestPage = React.lazy(() => import("@/pages/test"));
 
 const loading = <div>Loading</div>;
 
@@ -63,14 +62,14 @@ ReactDOM.render(
               </React.Suspense>
             }
           />
-          <Route
+          {/* <Route
             path="/repl"
             element={
               <React.Suspense fallback={loading}>
                 <ReplPage />
               </React.Suspense>
             }
-          />
+          /> */}
           <Route
             path="/img-create"
             element={
@@ -111,14 +110,14 @@ ReactDOM.render(
               </React.Suspense>
             }
           />
-          <Route
+          {/* <Route
             path="/test"
             element={
               <React.Suspense fallback={loading}>
                 <TestPage />
               </React.Suspense>
             }
-          />
+          /> */}
         </Route>
       </Routes>
     </HashRouter>

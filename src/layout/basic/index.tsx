@@ -22,10 +22,10 @@ const links = [
     name: "Dayjs 测试",
     to: "/dayjs",
   },
-  {
-    name: "JavaScript 测试",
-    to: "/repl",
-  },
+  // {
+  //   name: "JavaScript 测试",
+  //   to: "/repl",
+  // },
   {
     name: "测试图片在线生成",
     to: "/img-create",
