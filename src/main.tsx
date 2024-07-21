@@ -21,6 +21,7 @@ const BookSourceBuildPage = React.lazy(() => import("@/pages/book-source"));
 const ImageCreatePage = React.lazy(() => import("@/pages/create-img"));
 const StructConverterPage = React.lazy(() => import("@/pages/struct"));
 const URLSearchParsePage = React.lazy(() => import("@/pages/query"));
+const WifiQRCodePage = React.lazy(() => import("@/pages/wifi"));
 
 const loading = <div>Loading</div>;
 
@@ -107,6 +108,14 @@ ReactDOM.render(
             element={
               <React.Suspense fallback={loading}>
                 <URLSearchParsePage />
+              </React.Suspense>
+            }
+          />
+          <Route
+            path="/wifi"
+            element={
+              <React.Suspense fallback={loading}>
+                <WifiQRCodePage />
               </React.Suspense>
             }
           />

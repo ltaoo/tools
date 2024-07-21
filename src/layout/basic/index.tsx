@@ -42,6 +42,10 @@ const links = [
     name: "URL search 解析",
     to: "/url-search",
   },
+  {
+    name: "wifi 二维码",
+    to: "/wifi",
+  },
 ];
 
 const BasicLayout = () => {
