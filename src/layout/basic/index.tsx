@@ -1,57 +1,13 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 
-const links = [
-  {
-    name: "首页",
-    to: "/",
-  },
-  {
-    name: "正则测试",
-    to: "/regexp",
-  },
-  {
-    name: "正则构建",
-    to: "/regexp-build",
-  },
-  {
-    name: "正则挑战",
-    to: "/regexp-challenge",
-  },
-  {
-    name: "Dayjs 测试",
-    to: "/dayjs",
-  },
-  // {
-  //   name: "JavaScript 测试",
-  //   to: "/repl",
-  // },
-  {
-    name: "测试图片在线生成",
-    to: "/img-create",
-  },
-  {
-    name: "书源制作",
-    to: "/book-source",
-  },
-  {
-    name: "数据结构转换",
-    to: "/struct-convert",
-  },
-  {
-    name: "URL search 解析",
-    to: "/url-search",
-  },
-  {
-    name: "wifi 二维码",
-    to: "/wifi",
-  },
-];
+import { useMenus } from "@/hooks/menus";
 
 const BasicLayout = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const ref = useRef<HTMLDivElement>(null);
+  const links = useMenus();
 
   // console.log(location);
   useEffect(() => {
