@@ -4,14 +4,12 @@
 name: Build and deploy to gh-pages branch
 
 on:
-  push:
-    branches: [master]
-  pull_request:
-    branches: [master]
+  workflow_dispatch:
+
 
 jobs:
   docs:
-    runs-on: ubuntu-latest # 指定运行所需要的虚拟机环境（必填）
+    runs-on: macos-latest # 指定运行所需要的虚拟机环境（必填）
 
     steps:
       - uses: actions/checkout@v2

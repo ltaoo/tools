@@ -16,6 +16,7 @@ const StructConverterPage = React.lazy(() => import("@/pages/struct"));
 const URLSearchParsePage = React.lazy(() => import("@/pages/query"));
 const WifiQRCodePage = React.lazy(() => import("@/pages/wifi"));
 const Base64ParsePage = React.lazy(() => import("@/pages/base64"));
+const TextIndexesPage = React.lazy(() => import("@/pages/text-indexes"));
 
 export function useMenus() {
   return [
@@ -79,6 +80,11 @@ export function useMenus() {
       name: "wifi 二维码",
       to: "/wifi",
       page: WifiQRCodePage,
+    },
+    {
+      name: "文本下标",
+      to: "/text-indexes",
+      page: TextIndexesPage,
     },
   ];
 }

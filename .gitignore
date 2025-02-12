@@ -5,3 +5,5 @@ dist-ssr
 *.local
 *.log
 .env
+
+*.zip
