@@ -2,9 +2,8 @@ import React from "react";
 
 import HomePage from "@/pages/home";
 
-const ProfilePage = React.lazy(() => import("@/pages/profile"));
-const DayjsTestPage = React.lazy(() => import("@/pages/dayjs"));
 // const ReplPage = React.lazy(() => import("@/pages/repl"));
+const DayjsTestPage = React.lazy(() => import("@/pages/dayjs"));
 const RegexpTestPage = React.lazy(() => import("@/pages/regexp"));
 const RegexpChallengePage = React.lazy(
   () => import("@/pages/regexp-challenge")
@@ -17,6 +16,7 @@ const URLSearchParsePage = React.lazy(() => import("@/pages/query"));
 const WifiQRCodePage = React.lazy(() => import("@/pages/wifi"));
 const Base64ParsePage = React.lazy(() => import("@/pages/base64"));
 const TextIndexesPage = React.lazy(() => import("@/pages/text-indexes"));
+const CurlParsePage = React.lazy(() => import("@/pages/curl"));
 
 export function useMenus() {
   return [
@@ -65,6 +65,11 @@ export function useMenus() {
       name: "数据结构转换",
       to: "/struct-convert",
       page: StructConverterPage,
+    },
+    {
+      name: "Curl 解析",
+      to: "/curl-parse",
+      page: CurlParsePage,
     },
     {
       name: "URL search 解析",
