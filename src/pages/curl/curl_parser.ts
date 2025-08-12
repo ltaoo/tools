@@ -8,7 +8,6 @@ const urlInLocationRegex =
 type CurlCommandPayload = {
   url: string;
   headers: Record<string, string>;
-  body: string;
 };
 
 function is_start_with(texts: string[], text: string) {
@@ -41,17 +40,17 @@ function isJsonRequest(headers: CurlCommandPayload["headers"]) {
   return value.toUpperCase() === "APPLICATION/JSON";
 }
 
-function parse_body_by_content_type(data: CurlCommandPayload) {
-  const { body, headers } = data;
+function parse_body_by_content_type(data: CurlCommandPayload, body: string) {
+  const { headers } = data;
   if (!body) {
     return body;
   }
   const is_json_request = isJsonRequest(headers);
-  console.log(
-    "[]parse_body_by_content_type before if (!is_json_request)",
-    is_json_request,
-    body
-  );
+  // console.log(
+  //   "[]parse_body_by_content_type before if (!is_json_request)",
+  //   is_json_request,
+  //   body
+  // );
   if (!is_json_request) {
     return body;
   }
@@ -62,7 +61,7 @@ function parse_body_by_content_type(data: CurlCommandPayload) {
   } catch (ex) {
     const err = ex as Error;
     // ignore json conversion error..
-    console.log("Cannot parse JSON Data " + err.message); // eslint-disable-line
+    // console.log("Cannot parse JSON Data " + err.message); // eslint-disable-line
   }
   return body;
 }
@@ -179,23 +178,22 @@ function is_data_raw(str: string) {
 }
 
 export function parse(command: string) {
-  if (!command) {
-    return "";
-  }
-
   const parsedCommand: {
     url: string;
     query: Record<string, string | number>;
     headers: Record<string, string>;
     cookies: { key: string; value: string }[];
-    body: string;
+    body: Record<string, unknown>;
   } = {
     url: "",
     query: {},
     headers: {},
-    body: "",
+    body: {},
     cookies: [],
   };
+  if (!command) {
+    return parsedCommand;
+  }
   // quit if the command does not starts with curl
   if (!is_valid_curl_command(command)) {
     return parsedCommand;
@@ -208,7 +206,7 @@ export function parse(command: string) {
     const val = matches[i];
     (() => {
       const raw_line = removeLeadingTrailingQuotes(val);
-      console.log("raw line", raw_line);
+      // console.log("raw line", raw_line);
       if (is_url_raw(raw_line)) {
         const { url, query } = parse_url_raw(raw_line);
         parsedCommand.url = url;
@@ -237,15 +235,15 @@ export function parse(command: string) {
         return;
       }
       if (is_data_raw(raw_line)) {
-        parsedCommand.body = parse_body_raw(raw_line);
+        const body = parse_body_raw(raw_line);
+        parsedCommand.body = parse_body_by_content_type(parsedCommand, body);
         return;
       }
-      console.log(`Skipped Header ${val}`); // eslint-disable-line
+      // console.log(`Skipped Header ${val}`); // eslint-disable-line
     })();
   }
   // should be checked after all the options are analyzed
   // so that we guarentee that we have content-type header
-  parsedCommand.body = parse_body_by_content_type(parsedCommand);
   return parsedCommand;
 }
 
