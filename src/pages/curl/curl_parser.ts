@@ -173,19 +173,21 @@ function is_data_raw(str: string) {
       "--data-urlencode ",
       "--data-binary ",
     ],
-    str
+    str,
   );
 }
 
 export function parse(command: string) {
   const parsedCommand: {
     url: string;
+    method: "POST" | "GET" | "PUT" | "DELETE" | "OPTION";
     query: Record<string, string | number>;
     headers: Record<string, string>;
     cookies: { key: string; value: string }[];
     body: Record<string, unknown>;
   } = {
     url: "",
+    method: "GET",
     query: {},
     headers: {},
     body: {},

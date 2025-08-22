@@ -6,23 +6,42 @@ import "antd/es/message/style/index";
 
 import { useValue } from "@/hooks";
 
+const chars = ["&amp;", "&nbsp;", "&lt;", "&gt;", "&quot;", "&apos;"];
+
 const URLQueryParserPage = () => {
   const [url, setUrl] = useValue<string>("");
   const [pathname, setPathname] = useState("");
-  const [keyArr, setKeyArr] = useState<
-    {
-      key: string;
-      value: string;
-    }[]
-  >([]);
+  const [keyArr, setKeyArr] = useState<{ key: string; value: string }[]>([]);
   const [object, setObject] = useState("");
+  function checkNeedUnescape(url: string) {
+    return chars.some((c) => {
+      return url.includes(c);
+    });
+  }
+  function unescape(content: string) {
+    if (!content) {
+      return;
+    }
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(content, "text/html");
+    const v = doc.body.textContent;
+    setUrl(v);
+  }
   const parse = useCallback((url) => {
     if (!url) {
       return [];
     }
-    let search = decodeURIComponent(url);
-    if (url.includes("?")) {
-      const [path, searchStr] = url.split("?");
+    const needUnescape = checkNeedUnescape(url);
+    console.log("[PAGE]query/index - before need unescape", needUnescape);
+    const u = (() => {
+      if (needUnescape) {
+        return unescape(url);
+      }
+      return url;
+    })();
+    let search = decodeURIComponent(u);
+    if (u.includes("?")) {
+      const [path, searchStr] = u.split("?");
       search = searchStr;
       setPathname(path);
     }
@@ -73,6 +92,14 @@ const URLQueryParserPage = () => {
               }}
             >
               解析
+            </button>
+            <button
+              className="py-2 px-4 rounded bg-gray-800 text-white"
+              onClick={() => {
+                unescape(url);
+              }}
+            >
+              实体转义
             </button>
             <button
               className="py-2 px-4 rounded bg-gray-800 text-white"

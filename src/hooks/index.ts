@@ -4,6 +4,7 @@ import React, {
   useEffect,
   useRef,
   useState,
+  useMemo,
 } from "react";
 
 /**
@@ -13,7 +14,7 @@ export function useValue<T>(
   defaultValue: T,
   options: {
     onChange?: (v: T) => void;
-  } = {}
+  } = {},
 ): [value: T, binder: (v: any) => void, set: Dispatch<SetStateAction<T>>] {
   const { onChange } = options;
   const [value, setValue] = useState<T>(defaultValue);
@@ -40,7 +41,7 @@ export function useValue<T>(
 }
 
 export function useVisible(
-  defaultVisible: boolean
+  defaultVisible: boolean,
 ): [boolean, () => void, () => void, () => void, (visible: boolean) => void] {
   const [visible, setVisible] = useState(defaultVisible);
 
@@ -87,7 +88,7 @@ export function useHistoryRecords(key: string): [
   {
     push: (content: string) => void;
     remove: (id: number) => void;
-  }
+  },
 ] {
   function getMemories(): IMemory[] {
     return JSON.parse(localStorage.getItem(key) || "[]");
@@ -130,4 +131,29 @@ export function useHistoryRecords(key: string): [
       },
     },
   ];
+}
+
+type ViewModelFunction = (...args: any[]) => {
+  state: any;
+  ready: () => void;
+  onStateChange: (handler: any) => any;
+};
+export function useViewModel<T extends ViewModelFunction>(
+  builder: T,
+  args: any[] = [],
+): [ReturnType<T>["state"], ReturnType<T>] {
+  const model = useMemo(() => {
+    return builder(...args);
+  }, []);
+  const [state, setState] = useState(model.state);
+
+  useEffect(() => {
+    model.onStateChange((v: any) => {
+      console.log("[HOOK]model.onStateChange", v);
+      setState(v);
+    });
+    model.ready();
+  }, []);
+  // @ts-ignore
+  return [state, model];
 }

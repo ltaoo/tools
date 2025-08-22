@@ -1,13 +1,394 @@
 /**
  * @file curl 解析
+ * @reference https://jsfiddle.net/2Y587/80/
  */
 import { useCallback, useState, useEffect, useRef } from "react";
 import * as fabric from "fabric";
 import { FabricJSCanvas, useFabricJSEditor } from "fabricjs-react";
 
+import { base, Handler } from "@/domains/base";
+
 import { parse } from "./curl_parser";
+import { useViewModel } from "@/hooks";
 
 fabric.FabricObject.ownDefaults.transparentCorners = false;
+
+type CookiePayload = {
+  name: string;
+  value: string;
+  /** cookie 作用路径，大部分情况都是 / 表示全站可用 */
+  path?: string;
+  /** 作用域域名 */
+  domain?: string;
+  /** 过期时间 UTC格式 */
+  expires?: string;
+  /** 存活时间，秒数 Max-Age=86400 表示 24小时 */
+  max_age?: number;
+  /** true 时 js 无法通过 document.cookie 读取 */
+  http_only?: boolean;
+  /** 仅在 https 请求中传输 */
+  secure?: boolean;
+  same_site?: "lax" | "strict" | "none";
+};
+function CookieModel(props: CookiePayload) {
+  const methods = {
+    refresh() {
+      bus.emit(Events.StateChange, { ..._state });
+    },
+  };
+
+  let _name = props.name;
+  let _value = props.value;
+  let _path = props.path ?? "/";
+  let _domain = props.domain ?? null;
+  let _expires = props.expires ?? "session";
+  let _max_age = props.max_age ?? null;
+  let _http_only = props.http_only ?? false;
+  let _secure = props.secure ?? false;
+  let _same_site = props.same_site ?? "none";
+
+  const _state = {
+    get name() {
+      return _name;
+    },
+    get value() {
+      return _value;
+    },
+  };
+
+  enum Events {
+    StateChange,
+  }
+  type TheTypesOfEvents = {
+    [Events.StateChange]: typeof _state;
+  };
+  const bus = base<TheTypesOfEvents>();
+
+  return {
+    methods,
+    state: _state,
+    get name() {
+      return _state.name;
+    },
+    get value() {
+      return _state.value;
+    },
+    destroy() {
+      bus.destroy();
+    },
+    onStateChange(handler: Handler<TheTypesOfEvents[Events.StateChange]>) {
+      return bus.on(Events.StateChange, handler);
+    },
+  };
+}
+type CookieModel = ReturnType<typeof CookieModel>;
+
+function CookieManageModel(props: { cookies: CookieModel[] }) {
+  const methods = {
+    refresh() {
+      bus.emit(Events.StateChange, { ..._state });
+    },
+    remove(name: string) {
+      _cookies = _cookies.filter((v) => v.name !== name);
+      methods.refresh();
+    },
+    append(
+      name: string,
+      value: string,
+      extra: Omit<CookiePayload, "name" | "value"> = {},
+    ) {
+      _cookies = [
+        ..._cookies,
+        CookieModel({
+          name,
+          value,
+          ...extra,
+        }),
+      ];
+      methods.refresh();
+    },
+  };
+
+  let _cookies = props.cookies;
+  const _state = {
+    get value() {
+      return _cookies.map((v) => {
+        return v.state;
+      });
+    },
+  };
+
+  enum Events {
+    StateChange,
+  }
+  type TheTypesOfEvents = {
+    [Events.StateChange]: typeof _state;
+  };
+  const bus = base<TheTypesOfEvents>();
+
+  return {
+    methods,
+    state: _state,
+    setValue(value: typeof props.cookies) {
+      _cookies = value;
+      methods.refresh();
+    },
+    destroy() {
+      bus.destroy();
+    },
+    onStateChange(handler: Handler<TheTypesOfEvents[Events.StateChange]>) {
+      return bus.on(Events.StateChange, handler);
+    },
+  };
+}
+export type CookieManageModel = ReturnType<typeof CookieManageModel>;
+
+function parse_cookie(cookie: string) {
+  let text = cookie.replace(/-b /, "");
+  text = text.replace(/^['"]/, "");
+  text = text.replace(/['"]$/, "");
+  const segments = text.split(/; {0,1}/);
+  return segments.map((segment) => {
+    const [name, value] = segment.split("=");
+    return {
+      name,
+      value,
+    };
+  });
+}
+
+function HeaderModel(props: { headers: Record<string, string | number> }) {
+  const methods = {
+    refresh() {
+      bus.emit(Events.StateChange, { ..._state });
+    },
+    find(key: string) {
+      const matched = _headers.find((v) => v.key === key);
+      return matched ?? null;
+    },
+    remove(key: string) {
+      _headers = _headers.filter((v) => v.key !== key);
+      methods.refresh();
+    },
+    append(key: string, value: string | number) {
+      _headers = [
+        ..._headers,
+        {
+          key,
+          value,
+        },
+      ];
+      methods.refresh();
+    },
+    set(key: string, value: string | number) {
+      const matched = methods.find(key);
+      if (!matched) {
+        return;
+      }
+      const idx = _headers.findIndex((v) => v === matched);
+      if (idx === -1) {
+        return;
+      }
+      _headers = [
+        ..._headers.slice(0, idx),
+        {
+          ...matched,
+          value,
+        },
+        ..._headers.slice(idx + 1),
+      ];
+    },
+    output() {
+      return _headers
+        .map((h) => {
+          return {
+            [h.key]: h.value,
+          };
+        })
+        .reduce((a, b) => {
+          return { ...a, ...b };
+        }, {});
+    },
+  };
+
+  let _headers = Object.keys(props.headers).map((k) => {
+    return {
+      key: k,
+      value: props.headers[k],
+    };
+  });
+  const _state = {
+    get value() {
+      return _headers;
+    },
+  };
+
+  enum Events {
+    StateChange,
+  }
+  type TheTypesOfEvents = {
+    [Events.StateChange]: typeof _state;
+  };
+  const bus = base<TheTypesOfEvents>();
+
+  return {
+    methods,
+    state: _state,
+    set: methods.set,
+    append: methods.append,
+    remove: methods.remove,
+    output: methods.output,
+    setValue(value: typeof props.headers) {
+      _headers = Object.keys(value).map((k) => {
+        return {
+          key: k,
+          value: value[k],
+        };
+      });
+      methods.refresh();
+    },
+    destroy() {
+      bus.destroy();
+    },
+    onStateChange(handler: Handler<TheTypesOfEvents[Events.StateChange]>) {
+      return bus.on(Events.StateChange, handler);
+    },
+  };
+}
+
+type HTTPRequestPayload = {
+  url: string;
+  method: "POST" | "GET" | "PUT" | "DELETE" | "OPTION";
+  headers: Record<string, string | number>;
+  cookie: string;
+  body: string;
+};
+function RequestBuilderModel(props: {} & Partial<HTTPRequestPayload>) {
+  const methods = {
+    refresh() {
+      bus.emit(Events.StateChange, { ..._state });
+    },
+    /** 移除指定header */
+    removeHeader(name: string) {
+      ui.$header.remove(name);
+    },
+    /** 增加header */
+    appendHeader(name: string, value: string | number) {
+      ui.$header.append(name, value);
+    },
+    /** 修改指定header的值 */
+    updateHeader(name: string, value: string | number) {
+      ui.$header.set(name, value);
+    },
+    parseCURLCommand(command: string) {
+      const r = parse(command);
+      ui.$cookie.setValue(
+        r.cookies.map((v) => {
+          return CookieModel({ name: v.key, value: v.value });
+        }),
+      );
+      ui.$header.setValue(r.headers);
+      _url = r.url;
+      _method = r.method;
+      methods.refresh();
+    },
+  };
+
+  const cookies = props.cookie
+    ? parse_cookie(props.cookie).map((c) => {
+        return CookieModel({ name: c.name, value: c.value });
+      })
+    : [];
+  const ui = {
+    $header: HeaderModel({ headers: props.headers || {} }),
+    $cookie: CookieManageModel({ cookies }),
+  };
+
+  let _url = props.url ?? "";
+  let _method = props.method;
+
+  let _body_json = {};
+  const _state = {
+    get url() {
+      return _url;
+    },
+    get method() {
+      return _method;
+    },
+    get headers() {
+      return ui.$header.state.value;
+    },
+    get cookies() {
+      return ui.$cookie.state.value;
+    },
+  };
+
+  enum Events {
+    StateChange,
+  }
+  type TheTypesOfEvents = {
+    [Events.StateChange]: typeof _state;
+  };
+  const bus = base<TheTypesOfEvents>();
+
+  ui.$cookie.onStateChange(() => methods.refresh());
+  ui.$header.onStateChange(() => methods.refresh());
+
+  return {
+    methods,
+    state: _state,
+    parseCURLCommand: methods.parseCURLCommand,
+    destroy() {
+      bus.destroy();
+    },
+    onStateChange(handler: Handler<TheTypesOfEvents[Events.StateChange]>) {
+      return bus.on(Events.StateChange, handler);
+    },
+  };
+}
+
+function CURLParseViewModel(props: {}) {
+  const methods = {
+    refresh() {
+      bus.emit(Events.StateChange, { ..._state });
+    },
+    parseCURL(content: string) {
+      ui.$builder.parseCURLCommand(content);
+    },
+  };
+  const ui = {
+    $builder: RequestBuilderModel({}),
+  };
+
+  const _state = {
+    get data() {
+      return ui.$builder.state;
+    },
+  };
+
+  enum Events {
+    StateChange,
+  }
+  type TheTypesOfEvents = {
+    [Events.StateChange]: typeof _state;
+  };
+  const bus = base<TheTypesOfEvents>();
+
+  ui.$builder.onStateChange(() => methods.refresh());
+
+  return {
+    methods,
+    state: _state,
+    ready() {},
+    destroy() {
+      bus.destroy();
+    },
+    onStateChange(handler: Handler<TheTypesOfEvents[Events.StateChange]>) {
+      return bus.on(Events.StateChange, handler);
+    },
+  };
+}
+export type CURLParseViewModel = ReturnType<typeof CURLParseViewModel>;
 
 interface IMemory {
   id: number;
@@ -25,28 +406,109 @@ const CurlParsePage = () => {
     (() => {
       const cachedCase1 = localStorage.getItem("curl") || "";
       return cachedCase1;
-    })()
+    })(),
   );
   const [existingMemories, setExistingMemories] = useState(getMemories());
   const [result, setResult] = useState<null | ReturnType<typeof parse>>(null);
-  //   const [resultText, setResultText] = useState<string>("");
-  //   const refCanvas = useRef<HTMLCanvasElement | null>(null);
-  //   const refCanvas2 = useRef<HTMLCanvasElement | null>(null);
-  //   const refFabricCanvas = useRef<fabric.Canvas | null>(null);
   const { editor, onReady } = useFabricJSEditor();
 
-  useEffect(() => {}, []);
+  const [state, vm] = useViewModel(CURLParseViewModel, [{}]);
+
+  useEffect(() => {
+    if (!editor) {
+      return;
+    }
+    const canvas = editor.canvas;
+    // 画布拖拽相关变量
+    let isDragging = false;
+    let lastPosX = 0;
+    let lastPosY = 0;
+    // 设置画布可以拖拽
+    canvas.on("mouse:down", function (opt) {
+      console.log("[]mouse:down", opt.target, opt.subTargets);
+      const isClickObject = opt.target;
+      if (isClickObject) {
+        // console.log("[]mouse:down");
+        return;
+      }
+      isDragging = true;
+      canvas.defaultCursor = "grabbing";
+      canvas.hoverCursor = "grabbing";
+      const event = opt.e as MouseEvent;
+      lastPosX = event.clientX;
+      lastPosY = event.clientY;
+      canvas.selection = false;
+    });
+
+    canvas.on("mouse:move", function (opt) {
+      // console.log("[]mouse:move - ", isDragging, opt.target);
+      if (!isDragging) {
+        return;
+      }
+      const isClickObject = opt.target;
+      if (isClickObject) {
+        return;
+      }
+      const event = opt.e as MouseEvent;
+      const currentPosX = event.clientX;
+      const currentPosY = event.clientY;
+
+      const deltaX = currentPosX - lastPosX;
+      const deltaY = currentPosY - lastPosY;
+
+      const vpt = canvas.viewportTransform;
+      //   console.log("[]mouse:move - ", vpt, deltaX, deltaY);
+      if (vpt) {
+        vpt[4] += deltaX;
+        vpt[5] += deltaY;
+
+        // 限制拖拽边界，防止画布被拖拽到看不见的地方
+        const zoom = canvas.getZoom();
+        const canvasWidth = canvas.getWidth();
+        const canvasHeight = canvas.getHeight();
+        const viewportWidth = canvasWidth / zoom;
+        const viewportHeight = canvasHeight / zoom;
+        canvas.setViewportTransform(vpt);
+      }
+      lastPosX = currentPosX;
+      lastPosY = currentPosY;
+    });
+
+    canvas.on("mouse:up", function () {
+      isDragging = false;
+      canvas.defaultCursor = "grab";
+      canvas.hoverCursor = "grab";
+      canvas.selection = false;
+    });
+
+    // 触摸设备支持变量（为将来扩展预留）
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let touchStartTime = 0;
+
+    // 启用鼠标滚轮缩放
+    canvas.on("mouse:wheel", function (opt) {
+      const delta = opt.e.deltaY;
+      let zoom = canvas.getZoom();
+      zoom *= 0.999 ** delta;
+      if (zoom > 20) zoom = 20;
+      if (zoom < 0.01) zoom = 0.01;
+      canvas.zoomToPoint(new fabric.Point(opt.e.offsetX, opt.e.offsetY), zoom);
+      opt.e.preventDefault();
+      opt.e.stopPropagation();
+    });
+  }, [editor]);
 
   const parseCurl = useCallback(
     (content) => {
-      const r = parse(content);
-      setResult(r);
+      vm.methods.parseCURL(content);
       localStorage.setItem("curl", content);
 
       if (!editor) {
         return;
       }
 
+      const r = parse(content);
       // 清空画布
       editor.canvas.clear();
 
@@ -78,155 +540,58 @@ const CurlParsePage = () => {
         leftMargin,
         currentY,
         fieldWidth,
-        fieldHeight
+        fieldHeight + 12,
       );
       canvas.add(urlGroup);
       currentY += fieldHeight + spacing;
 
       // 渲染 Headers 字段 - 带缩进
       if (r.headers && Object.keys(r.headers).length > 0) {
-        const { group: headersGroup, y } = createHeadersField(
+        const { group: headersGroup, y } = renderHeaderFields(
           r.headers,
-          leftMargin + 20, // 增加缩进
+          leftMargin + 40, // 增加缩进
           currentY,
-          fieldWidth - 20,
-          fieldHeight
+          fieldWidth - 80,
+          fieldHeight,
         );
         canvas.add(headersGroup);
         currentY += y + spacing;
       }
 
-      // 渲染 Cookies 字段 - 带缩进
-      if (r.cookies && r.cookies.length > 0) {
-        const { group: cookiesGroup, y } = createCookiesField(
-          r.cookies,
-          leftMargin + 20, // 增加缩进
-          currentY,
-          fieldWidth - 20,
-          fieldHeight
-        );
-        canvas.add(cookiesGroup);
-        currentY += y + spacing;
-      }
+      //       if (r.cookies && r.cookies.length > 0) {
+      //         const { group: cookiesGroup, y } = createCookiesField(
+      //           r.cookies,
+      //           leftMargin + 40, // 增加缩进
+      //           currentY,
+      //           fieldWidth - 80,
+      //           fieldHeight
+      //         );
+      //         canvas.add(cookiesGroup);
+      //         currentY += y + spacing;
+      //       }
 
-      // 渲染 Body 字段 - 带缩进
-      if (r.body && Object.keys(r.body).length > 0) {
-        const { group: bodyGroup, y } = createBodyField(
-          typeof r.body === "string" ? r.body : JSON.stringify(r.body, null, 2),
-          leftMargin + 20, // 增加缩进
-          currentY,
-          fieldWidth - 20,
-          fieldHeight
-        );
-        canvas.add(bodyGroup);
-        currentY += y + spacing;
-      }
+      //       if (r.body && Object.keys(r.body).length > 0) {
+      //         const { group: bodyGroup, y } = createBodyField(
+      //           typeof r.body === "string" ? r.body : JSON.stringify(r.body, null, 2),
+      //           leftMargin + 40, // 增加缩进
+      //           currentY,
+      //           fieldWidth - 80,
+      //           fieldHeight
+      //         );
+      //         canvas.add(bodyGroup);
+      //         currentY += y + spacing;
+      //       }
 
-      // 调整画布大小以适应内容
-      canvas.setHeight(Math.max(canvasHeight, currentY + 30));
+      canvas.setHeight(1200);
 
       // 启用画布交互功能
       canvas.selection = false;
-      canvas.defaultCursor = "grab";
-      canvas.hoverCursor = "grab";
+      //       canvas.defaultCursor = "grab";
+      //       canvas.hoverCursor = "grab";
 
-      // 画布拖拽相关变量
-      let isDragging = false;
-      let lastPosX = 0;
-      let lastPosY = 0;
-
-      // 设置画布可以拖拽
-      canvas.on("mouse:down", function (opt) {
-        console.log("[]mouse:down - check opt.target === null", opt.target);
-        if (!opt.target) {
-          isDragging = true;
-          canvas.defaultCursor = "grabbing";
-          canvas.hoverCursor = "grabbing";
-          const event = opt.e as MouseEvent;
-          lastPosX = event.clientX;
-          lastPosY = event.clientY;
-          canvas.selection = false;
-        }
-      });
-
-      canvas.on("mouse:move", function (opt) {
-        console.log("[]mouse:move - ", isDragging, opt.target);
-        if (isDragging && !opt.target) {
-          const event = opt.e as MouseEvent;
-          const currentPosX = event.clientX;
-          const currentPosY = event.clientY;
-
-          const deltaX = currentPosX - lastPosX;
-          const deltaY = currentPosY - lastPosY;
-
-          const vpt = canvas.viewportTransform;
-          console.log("[]mouse:move - ", vpt, deltaX, deltaY);
-          if (vpt) {
-            vpt[4] += deltaX;
-            vpt[5] += deltaY;
-
-            // 限制拖拽边界，防止画布被拖拽到看不见的地方
-            const zoom = canvas.getZoom();
-            const canvasWidth = canvas.getWidth();
-            const canvasHeight = canvas.getHeight();
-            const viewportWidth = canvasWidth / zoom;
-            const viewportHeight = canvasHeight / zoom;
-
-            // 限制左边界
-        //     if (vpt[4] > 0) {
-        //       vpt[4] = 0;
-        //     }
-        //     // 限制右边界
-        //     if (vpt[4] < -(viewportWidth - canvasWidth)) {
-        //       vpt[4] = -(viewportWidth - canvasWidth);
-        //     }
-        //     // 限制上边界
-        //     if (vpt[5] > 0) {
-        //       vpt[5] = 0;
-        //     }
-        //     // 限制下边界
-        //     if (vpt[5] < -(viewportHeight - canvasHeight)) {
-        //       vpt[5] = -(viewportHeight - canvasHeight);
-        //     }
-
-            canvas.setViewportTransform(vpt);
-          }
-
-          lastPosX = currentPosX;
-          lastPosY = currentPosY;
-        }
-      });
-
-      canvas.on("mouse:up", function () {
-        isDragging = false;
-        canvas.defaultCursor = "grab";
-        canvas.hoverCursor = "grab";
-        canvas.selection = false;
-      });
-
-      // 触摸设备支持变量（为将来扩展预留）
-      let touchStartX = 0;
-      let touchStartY = 0;
-      let touchStartTime = 0;
-
-      // 启用鼠标滚轮缩放
-      canvas.on("mouse:wheel", function (opt) {
-        const delta = opt.e.deltaY;
-        let zoom = canvas.getZoom();
-        zoom *= 0.999 ** delta;
-        if (zoom > 20) zoom = 20;
-        if (zoom < 0.01) zoom = 0.01;
-        canvas.zoomToPoint(
-          new fabric.Point(opt.e.offsetX, opt.e.offsetY),
-          zoom
-        );
-        opt.e.preventDefault();
-        opt.e.stopPropagation();
-      });
-
-      canvas.renderAll();
+      //       canvas.renderAll();
     },
-    [editor]
+    [editor],
   );
 
   // 创建 URL 字段
@@ -235,7 +600,7 @@ const CurlParsePage = () => {
     left: number,
     top: number,
     width: number,
-    height: number
+    height: number,
   ) => {
     const group = new fabric.Group([], {
       left,
@@ -301,44 +666,47 @@ const CurlParsePage = () => {
   };
 
   // 创建 Headers 字段
-  const createHeadersField = (
+  const renderHeaderFields = (
     headers: Record<string, string>,
     left: number,
     top: number,
     width: number,
-    height: number
+    height: number,
   ) => {
     const group = new fabric.Group([], {
       left,
       top,
+      stroke: "#e0f2fe",
+      strokeWidth: 1,
+      subTargetCheck: true,
       selectable: false,
-      evented: false,
+      evented: true,
     });
     let cur_y = top;
     // 默认收起状态
     const bg = new fabric.Rect({
-      left: 0,
+      left: left,
       top: cur_y,
       width,
-      height: height,
+      height,
       fill: "#f0f9ff",
       rx: 10,
       ry: 10,
       stroke: "#0ea5e9",
-      strokeWidth: 2,
-      shadow: new fabric.Shadow({
-        color: "rgba(0,0,0,0.05)",
-        blur: 5,
-        offsetX: 0,
-        offsetY: 2,
-      }),
+      strokeWidth: 1,
+      //       shadow: new fabric.Shadow({
+      //         color: "rgba(0,0,0,0.05)",
+      //         blur: 5,
+      //         offsetX: 0,
+      //         offsetY: 2,
+      //       }),
       selectable: false,
       evented: false,
     });
     cur_y += 12;
     // Headers 标签
     const labelText = new fabric.FabricText("📋 Headers", {
-      left: 20,
+      left: left + 20,
       top: cur_y,
       fontSize: 16,
       fontWeight: "bold",
@@ -347,18 +715,18 @@ const CurlParsePage = () => {
       evented: false,
     });
 
-    cur_y += 36;
+    cur_y += 16;
     // 显示 headers 数量
     const countText = new fabric.FabricText(
       `${Object.keys(headers).length} items`,
       {
-        left: 20,
+        left: left + 20 + 24,
         top: cur_y,
         fontSize: 14,
         fill: "#0ea5e9",
         selectable: false,
         evented: false,
-      }
+      },
     );
 
     cur_y += height / 2 - 10;
@@ -370,33 +738,45 @@ const CurlParsePage = () => {
       selectable: true,
       evented: true,
       data: { type: "expand", field: "headers" },
-      shadow: new fabric.Shadow({
-        color: "rgba(0,0,0,0.1)",
-        blur: 3,
-        offsetX: 0,
-        offsetY: 2,
-      }),
+      //       shadow: new fabric.Shadow({
+      //         color: "rgba(0,0,0,0.1)",
+      //         blur: 3,
+      //         offsetX: 0,
+      //         offsetY: 2,
+      //       }),
     });
 
     cur_y += height / 2 - 10;
-    const expandIcon = new fabric.Text("▶", {
-      left: width - 30,
-      top: cur_y,
-      fontSize: 14,
-      fill: "#ffffff",
-      selectable: false,
-      evented: false,
-      originX: "center",
-      originY: "center",
-    });
+    //     const expandIcon = new fabric.FabricText("▶", {
+    //       left: width - 30,
+    //       top: cur_y,
+    //       fontSize: 14,
+    //       fill: "#ffffff",
+    //       selectable: false,
+    //       evented: false,
+    //       originX: "center",
+    //       originY: "center",
+    //     });
 
+    //     group.on("mousedown", (e) => {
+    //       console.log("[]group.on mousedown", e);
+    //     });
+    //     expandBtn.on("mousemove", function () {
+    //       console.log("[]expandBtn.on mousemove");
+    //     });
+    //     expandBtn.on("mousedown:before", function () {
+    //       console.log("[]expandBtn.on click");
+    //     });
+    let isExpanded = false;
     // 添加展开事件
     expandBtn.on("mousedown", function () {
-      const isExpanded = expandIcon.text === "▼";
+      console.log("[]expandBtn.on mousedown");
+      //       const isExpanded = expandIcon.text === "▼";
 
       if (isExpanded) {
+        isExpanded = true;
+        editor?.canvas.setHeight(800);
         // 收起
-        expandIcon.set({ text: "▶" });
         bg.set({ height: height });
         group.set({ height: height });
         countText.set({ visible: true });
@@ -407,8 +787,9 @@ const CurlParsePage = () => {
         });
         expandedItems.forEach((item) => item.set({ visible: false }));
       } else {
+        isExpanded = false;
         // 展开
-        expandIcon.set({ text: "▼" });
+        // expandIcon.set({ text: "▼" });
         const headersList = Object.entries(headers);
         const newHeight = height + headersList.length * 35 + 20;
         bg.set({ height: newHeight });
@@ -447,14 +828,20 @@ const CurlParsePage = () => {
         });
       }
 
-      editor?.canvas.renderAll();
+      //       editor?.canvas.renderAll();
     });
+
+    //     editor?.canvas.add(bg);
+    //     editor?.canvas.add(labelText);
+    //     editor?.canvas.add(countText);
+    //     editor?.canvas.add(expandBtn);
 
     group.add(bg);
     group.add(labelText);
     group.add(countText);
     group.add(expandBtn);
-    group.add(expandIcon);
+
+    // group.add(expandIcon);
 
     return {
       group,
@@ -468,19 +855,20 @@ const CurlParsePage = () => {
     left: number,
     top: number,
     width: number,
-    height: number
+    height: number,
   ) => {
     let cur_y = top;
     const group = new fabric.Group([], {
       left,
       top: cur_y,
+      subTargetCheck: true,
       selectable: false,
-      evented: false,
+      evented: true,
     });
 
     // 默认收起状态
     const bg = new fabric.Rect({
-      left: 0,
+      left: left,
       top: cur_y,
       width,
       height: height,
@@ -488,21 +876,21 @@ const CurlParsePage = () => {
       rx: 10,
       ry: 10,
       stroke: "#f59e0b",
-      strokeWidth: 2,
-      shadow: new fabric.Shadow({
-        color: "rgba(0,0,0,0.05)",
-        blur: 5,
-        offsetX: 0,
-        offsetY: 2,
-      }),
+      strokeWidth: 1,
+      //       shadow: new fabric.Shadow({
+      //         color: "rgba(0,0,0,0.05)",
+      //         blur: 5,
+      //         offsetX: 0,
+      //         offsetY: 2,
+      //       }),
       selectable: false,
       evented: false,
     });
 
     cur_y += 12;
     // Cookies 标签
-    const labelText = new fabric.Text("🍪 Cookies", {
-      left: 20,
+    const labelText = new fabric.FabricText("🍪 Cookies", {
+      left: left + 20,
       top: cur_y,
       fontSize: 16,
       fontWeight: "bold",
@@ -513,8 +901,8 @@ const CurlParsePage = () => {
 
     cur_y += 35;
     // 显示 cookies 数量
-    const countText = new fabric.Text(`${cookies.length} items`, {
-      left: 20,
+    const countText = new fabric.FabricText(`${cookies.length} items`, {
+      left: left + 20,
       top: cur_y,
       fontSize: 14,
       fill: "#f59e0b",
@@ -540,7 +928,7 @@ const CurlParsePage = () => {
     });
 
     cur_y += height / 2 - 10;
-    const expandIcon = new fabric.Text("▶", {
+    const expandIcon = new fabric.FabricText("▶", {
       left: width - 30,
       top: cur_y,
       fontSize: 14,
@@ -566,7 +954,7 @@ const CurlParsePage = () => {
           .getObjects()
           .filter(
             (obj) =>
-              (obj as any).data && (obj as any).data.type === "cookie-item"
+              (obj as any).data && (obj as any).data.type === "cookie-item",
           );
         expandedItems.forEach((item) => item.set({ visible: false }));
       } else {
@@ -604,7 +992,7 @@ const CurlParsePage = () => {
               selectable: false,
               evented: false,
               data: { type: "cookie-item" },
-            }
+            },
           );
 
           const deleteBtn = new fabric.Circle({
@@ -703,14 +1091,14 @@ const CurlParsePage = () => {
     left: number,
     top: number,
     width: number,
-    height: number
+    height: number,
   ) => {
     let cur_y = top;
     const group = new fabric.Group([], {
       left,
       top: cur_y,
       selectable: false,
-      evented: false,
+      evented: true,
     });
 
     // 默认收起状态
@@ -833,7 +1221,7 @@ const CurlParsePage = () => {
         bodyText.set({ text: body });
         const newHeight = Math.max(
           height,
-          Math.ceil(body.length / 60) * 20 + height + 40
+          Math.ceil(body.length / 60) * 20 + height + 40,
         );
         bg.set({ height: newHeight });
         group.set({ height: newHeight });
@@ -854,7 +1242,7 @@ const CurlParsePage = () => {
     group: fabric.Group,
     bg: fabric.Rect,
     valueText: fabric.Text,
-    expandIcon: fabric.Text
+    expandIcon: fabric.Text,
   ) => {
     const isExpanded = expandIcon.text === "▼";
 
@@ -875,7 +1263,7 @@ const CurlParsePage = () => {
       valueText.set({ text: fullValue });
       const newHeight = Math.max(
         40,
-        Math.ceil(fullValue.length / 60) * 20 + 40
+        Math.ceil(fullValue.length / 60) * 20 + 40,
       );
       bg.set({ height: newHeight });
       group.set({ height: newHeight });
@@ -987,9 +1375,61 @@ const CurlParsePage = () => {
         </button>
       </div>
       <div className="panel">
-        <div className="flex items-center justify-between mb-4">
-          <p className="text-lg font-semibold">解析结果</p>
-          <div className="flex space-x-2">
+        <div className="mb-4">
+          <p className="text-lg">解析结果</p>
+          {state.data.url ? (
+            <div>
+              <div className="text-2xl">{state.data.url}</div>
+              <div>{state.data.method}</div>
+              <div className="p-2">
+                <div className="flex items-center space-x-2">
+                  <div className="text-xl">Headers</div>
+                  <div>{state.data.headers.length}</div>
+                </div>
+                <div className="ml-4">
+                  <table>
+                    <thead></thead>
+                    <tbody>
+                      {state.data.headers.map((v) => {
+                        return (
+                          <tr key={v.key}>
+                            <td className="text-gray-500 whitespace-nowrap">
+                              {v.key}
+                            </td>
+                            <td className="break-all">{v.value}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              <div className="p-2">
+                <div className="flex items-center space-x-2">
+                  <div className="text-xl">Cookies</div>
+                  <div>{state.data.cookies.length}</div>
+                </div>
+                <div className="ml-4">
+                  <table>
+                    <thead></thead>
+                    <tbody>
+                      {state.data.cookies.map((v) => {
+                        return (
+                          <tr key={v.name}>
+                            <td className="text-gray-500 whitespace-nowrap">
+                              {v.name}
+                            </td>
+                            <td className="break-all">{v.value}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          ) : null}
+          {/* <div className="flex space-x-2">
             <button
               className="py-2 px-3 rounded bg-blue-500 text-white text-sm"
               onClick={() => {
@@ -1026,9 +1466,9 @@ const CurlParsePage = () => {
             >
               缩小
             </button>
-          </div>
+          </div> */}
         </div>
-        <div
+        {/* <div
           style={{
             width: "800px",
             height: "800px",
@@ -1038,17 +1478,7 @@ const CurlParsePage = () => {
           }}
         >
           <FabricJSCanvas className="sample-canvas" onReady={onReady} />
-        </div>
-        <div className="mt-2 text-sm text-gray-600">
-          <p>💡 提示：</p>
-          <ul className="list-disc list-inside ml-4 space-y-1">
-            <li>使用鼠标滚轮可以缩放画布</li>
-            <li>拖拽空白区域可以移动画布（按住鼠标左键拖拽）</li>
-            <li>点击 ▶ 按钮展开字段详情</li>
-            <li>点击 ▼ 按钮收起字段详情</li>
-            <li>使用右上角按钮可以重置视图、放大或缩小</li>
-          </ul>
-        </div>
+        </div> */}
       </div>
       <div className="py-12">
         <p className="mt-6">历史记录</p>
@@ -1079,7 +1509,7 @@ const CurlParsePage = () => {
                         className="py-1 px-2 text-sm rounded bg-gray-800 text-white"
                         onClick={() => {
                           const nextMemories = existingMemories.filter(
-                            (memory) => memory.id !== id
+                            (memory) => memory.id !== id,
                           );
                           updateMemories(nextMemories);
                           setExistingMemories(nextMemories);
