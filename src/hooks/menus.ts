@@ -17,6 +17,7 @@ const WifiQRCodePage = React.lazy(() => import("@/pages/wifi"));
 const Base64ParsePage = React.lazy(() => import("@/pages/base64"));
 const TextIndexesPage = React.lazy(() => import("@/pages/text-indexes"));
 const CurlParsePage = React.lazy(() => import("@/pages/curl"));
+const WechatXMLParserPage = React.lazy(() => import("@/pages/wechat_xml"));
 
 export function useMenus() {
   return [
@@ -75,6 +76,11 @@ export function useMenus() {
       name: "URL search 解析",
       to: "/url-search",
       page: URLSearchParsePage,
+    },
+    {
+      name: "WechatXML 解析",
+      to: "/wechat-xml",
+      page: WechatXMLParserPage,
     },
     {
       name: "Base64",

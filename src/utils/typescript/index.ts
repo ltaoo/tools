@@ -54,7 +54,7 @@ export type JSONSchema = MutableRecord<{
   };
   [JSONSchemaTypes.Array]: {
     /** 元素 */
-    items: JSONSchema[] | JSONSchema;
+    items: JSONSchema;
     /** 标题 */
     title?: string;
     /** 描述(相比标题可以更长，但作用是相同的) */

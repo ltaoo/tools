@@ -18,7 +18,7 @@ const HomePage = () => {
             return null;
           }
           return (
-            <div className="p-4 border rounded-md cursor-pointer">
+            <div key={link.name} className="p-4 border rounded-md cursor-pointer">
               <Link
                 key={link.to}
                 className="block py-2 px-4 text-gray-800 rounded cursor-pointer no-underline"

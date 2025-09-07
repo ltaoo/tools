@@ -18,7 +18,10 @@ import {
   jsonSchema2Interface,
   jsonSchema2JSDoc,
 } from "@/utils/typescript";
-import { buildExampleCode } from "@/utils/typescript/example";
+import {
+  buildExampleCode,
+  buildGolangExampleCode,
+} from "@/utils/typescript/example";
 import { jsEnumPlugin, tsEnumPlugin } from "@/utils/typescript/plugins/enum";
 
 const ReplPage = () => {
@@ -35,24 +38,25 @@ const ReplPage = () => {
   );
   const [records, recordManage] = useHistoryRecords("struct-page");
   const codeRef = useRef(code);
-  const interfaceRef = useRef("");
-  const jsdocRef = useRef("");
-  const [interfaceStr, setInterfaceStr] = useState("");
-  const [JSDocStr, setJSDocStr] = useState("");
+  const refTSInterface = useRef("");
+  const refJSDoc = useRef("");
+  const refGolang = useRef("");
+  const [rTSInterface, setInterfaceStr] = useState("");
+  const [rJSDoc, setJSDocStr] = useState("");
+  const [rGolangStruct, setGolangStr] = useState("");
 
   const convert = useCallback((codeString) => {
     if (!codeString) {
       return;
     }
     try {
-      const regexp =
-        /([0-9a-z]{1,})[：:]{1}([^;；]{1,})[;；]{1}/;
+      const regexp = /([0-9a-z]{1,})[：:]{1}([^;；]{1,})[;；]{1}/;
       const tsLifetimes = tsEnumPlugin(regexp);
       const jsLifetimes = jsEnumPlugin(regexp);
-      interfaceRef.current = json2Interface(codeString, {
+      refTSInterface.current = json2Interface(codeString, {
         plugin: tsLifetimes,
       });
-      jsdocRef.current = json2JSDoc(codeString, {
+      refJSDoc.current = json2JSDoc(codeString, {
         plugin: jsLifetimes,
       });
       const ast = parse(codeString);
@@ -67,6 +71,11 @@ const ReplPage = () => {
         lifetimes: jsLifetimes,
       });
       setJSDocStr(jsdoc);
+      const golangStr = buildGolangExampleCode(schema, {
+        language: "ts",
+        lifetimes: tsLifetimes,
+      });
+      setGolangStr(golangStr);
     } catch (err) {
       console.log(err);
       // @ts-ignore
@@ -75,14 +84,14 @@ const ReplPage = () => {
   }, []);
 
   const elms: Record<string, React.ReactNode> = {
-    "TypeScript interface": interfaceStr ? (
+    "TypeScript interface": rTSInterface ? (
       <div className="relative">
-        <LazyEditor key="ts" language="typescript" value={interfaceStr} />
+        <LazyEditor key="ts" language="typescript" value={rTSInterface} />
         <div
           className="btn absolute right-10 top-4"
           onClick={() => {
-            if (interfaceRef.current) {
-              copy(interfaceRef.current);
+            if (refTSInterface.current) {
+              copy(refTSInterface.current);
               message.success("复制成功");
             }
           }}
@@ -91,14 +100,30 @@ const ReplPage = () => {
         </div>
       </div>
     ) : null,
-    JSDoc: JSDocStr ? (
+    JSDoc: rJSDoc ? (
       <div className="relative">
-        <LazyEditor key="js" language="javascript" value={JSDocStr} />
+        <LazyEditor key="js" language="javascript" value={rJSDoc} />
         <div
           className="btn absolute right-10 top-4"
           onClick={() => {
-            if (jsdocRef.current) {
-              copy(jsdocRef.current);
+            if (refJSDoc.current) {
+              copy(refJSDoc.current);
+              message.success("复制成功");
+            }
+          }}
+        >
+          复制
+        </div>
+      </div>
+    ) : null,
+    "Golang struct": rGolangStruct ? (
+      <div className="relative">
+        <LazyEditor key="golang" language="go" value={rGolangStruct} />
+        <div
+          className="btn absolute right-10 top-4"
+          onClick={() => {
+            if (refJSDoc.current) {
+              copy(refJSDoc.current);
               message.success("复制成功");
             }
           }}

@@ -119,3 +119,140 @@ export function buildExampleCode(
   ];
   return codes.join("\n");
 }
+
+export function buildGolangExampleCode(
+  schema: JSONSchema,
+  options: Partial<{
+    rootKey: string;
+    language: "ts" | "js";
+    lifetimes: ConverterLifetimes;
+  }> = {}
+) {
+  return jsonSchemaToGoStruct(schema, "GeneratedStruct");
+}
+
+function jsonSchemaToGoStruct(
+  schema: JSONSchema,
+  structName = "GeneratedStruct"
+) {
+  // console.log(schema);
+  // let go_code = `type ${structName} struct {\n`;
+  // if (schema.type !== "object") {
+  //   return `// Schema is not an object type\ntype ${structName} ${mapType(
+  //     schema
+  //   )}`;
+  // }
+  // const requiredFields = schema.required || [];
+  // for (const [propertyName, propertySchema] of Object.entries(
+  //   schema.properties || {}
+  // )) {
+  //   const isRequired = requiredFields.includes(propertyName);
+  //   const fieldName = toPascalCase(propertyName);
+  //   const fieldType = mapType(propertySchema);
+  //   const jsonTag = `\`json:"${propertyName}${
+  //     isRequired ? "" : ",omitempty"
+  //   }"\``;
+  //   go_code += `  ${fieldName} ${fieldType} ${jsonTag}\n`;
+  // }
+  // go_code += "}";
+  // return go_code;
+  const lines: string[] = [];
+  // mapType(schema, "Root", 1, (v: string[]) => {
+  //   lines.push(...v);
+  // });
+  mapType("", schema, "Root", 1, lines);
+
+  return lines.join("\n");
+}
+function underscoreToUpperCamelCase(str: string) {
+  if (!str || typeof str !== "string") {
+    return str;
+  }
+
+  return str
+    .split("_")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join("");
+}
+function isUpperChar(char: string) {
+  return char >= "A" && char <= "Z";
+}
+function mapType(
+  key: string,
+  schema: JSONSchema,
+  name = "",
+  indent = 0,
+  lines: string[]
+  // callback: (v: string[]) => void
+): string {
+  // if (schema.$ref) {
+  //   return schema.$ref.split("/").pop();
+  // }
+
+  // if (schema.enum) {
+  //   return "string"; // Could be more sophisticated with iota for known enums
+  // }
+
+  switch (schema.type) {
+    case "string":
+      // if (schema.format === "date-time") return "time.Time";
+      // callback(["string"]);
+      return "string";
+    // case "integer":
+    //   return "int";
+    case "number":
+      // callback(["float64"]);
+      return "int";
+    case "boolean":
+      // callback(["bool"]);
+      return "bool";
+    case "array":
+      // lines.unshift(`[]${mapType(schema.items, name, indent + 1, lines)}`);
+      // return "";
+      return `[]${mapType(key, schema.items, name, indent + 1, lines)}`;
+    case "object":
+      if (schema.properties) {
+        const keys = Object.keys(schema.properties);
+        const vvv = keys.map((k) => {
+          const struct_name = underscoreToUpperCamelCase(k);
+          const tt = mapType(
+            k,
+            schema.properties[k],
+            struct_name,
+            indent + 1,
+            lines
+          );
+          const fixed_struct_name = (() => {
+            // 本来是想去掉表示复数的 s 结尾，但是会有 Status 这种单词，去掉就完全错误了
+            // const first_char = tt[0];
+            // const last_char = tt[tt.length - 1];
+            // if (isUpperChar(first_char) && last_char === "s") {
+            //   return tt.slice(0, -1);
+            // }
+            return tt;
+          })();
+          return `${struct_name} ${fixed_struct_name} \`json:"${k}"\``;
+        });
+        // const valueType = mapType(schema.additionalProperties);
+        if (name) {
+          const the_struct = [
+            `type ${name} struct {`,
+            ...vvv.map((l) => `${" ".repeat(indent + 1)}${l}`),
+            "}",
+          ];
+          lines.unshift(...the_struct);
+          return name;
+        }
+        return `map[string]struct {\n${vvv}\n${" ".repeat(indent)}}`;
+      }
+      return "interface{}"; // For anonymous objects
+    default:
+      return "interface{}";
+  }
+}
+
+function toPascalCase(str: string) {
+  return str.replace(/(^\w|_\w)/g, (match) =>
+    match.replace(/_/, "").toUpperCase()
+  );
+}
