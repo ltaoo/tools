@@ -6,7 +6,7 @@ import HomePage from "@/pages/home";
 const DayjsTestPage = React.lazy(() => import("@/pages/dayjs"));
 const RegexpTestPage = React.lazy(() => import("@/pages/regexp"));
 const RegexpChallengePage = React.lazy(
-  () => import("@/pages/regexp-challenge")
+  () => import("@/pages/regexp-challenge"),
 );
 const RegexpBuildPage = React.lazy(() => import("@/pages/regexp-build"));
 const BookSourceBuildPage = React.lazy(() => import("@/pages/book-source"));
@@ -18,6 +18,7 @@ const Base64ParsePage = React.lazy(() => import("@/pages/base64"));
 const TextIndexesPage = React.lazy(() => import("@/pages/text-indexes"));
 const CurlParsePage = React.lazy(() => import("@/pages/curl"));
 const WechatXMLParserPage = React.lazy(() => import("@/pages/wechat_xml"));
+const WhistleMockPage = React.lazy(() => import("@/pages/whistle_mock"));
 
 export function useMenus() {
   return [
@@ -71,6 +72,11 @@ export function useMenus() {
       name: "Curl 解析",
       to: "/curl-parse",
       page: CurlParsePage,
+    },
+    {
+      name: "Whistle Mock",
+      to: "/whistle-mock",
+      page: WhistleMockPage,
     },
     {
       name: "URL search 解析",

@@ -30,15 +30,15 @@ const BasicLayout = () => {
   }, []);
 
   return (
-    <div className="flex flex-col h-full p-8 overflow-hidden">
+    <div className="flex flex-col h-full p-4 overflow-hidden">
       <div className="relative flex justify-between h-full">
-        <div className="h-full py-4 px-6 bg-gray-100 space-y-4">
+        <div className="h-full p-4 bg-gray-100 space-y-2">
           {links.map((link) => {
             const { name, to } = link;
             return (
               <Link
                 key={to}
-                className="block py-2 px-4 text-gray-800 rounded cursor-pointer no-underline"
+                className="block py-2 px-2 text-gray-800 rounded cursor-pointer no-underline hover:bg-gray-300"
                 to={to}
               >
                 {name}
