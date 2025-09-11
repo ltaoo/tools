@@ -23,7 +23,7 @@ function downloadImage(blob: Blob, name: string) {
 }
 function createImageWithCanvasAndTargetSize(
   $canvas: HTMLCanvasElement,
-  targetSize: number
+  targetSize: number,
 ): Promise<[Blob | null, Error | null]> {
   return new Promise((resolve, reject) => {
     $canvas.toBlob((blob) => {
@@ -92,12 +92,7 @@ const CreateImgPage = () => {
   const [width, onWidthChange, setWidth] = useValue(200);
   const [height, onHeightChange, setHeight] = useValue(200);
   const [unit, onUnitChange] = useValue("MB");
-  const [size, onSizeChange] = useValue(2, {
-    onChange: (v) => {
-      setWidth(1000);
-      setHeight(1000);
-    },
-  });
+  const [size, onSizeChange] = useValue(2, {});
   const [type, onTypeChange] = useValue("png");
 
   useEffect(() => {
@@ -155,7 +150,7 @@ const CreateImgPage = () => {
           return Number(size) * 1024;
         }
         return 0;
-      })()
+      })(),
     );
     if (error) {
       alert(error.message);
@@ -213,7 +208,7 @@ const CreateImgPage = () => {
         </button>
       </div>
       <div className="mt-12">
-        <div className="w-120 h-120">
+        <div className="w-120">
           <canvas
             className="w-full"
             ref={canvasRef}
