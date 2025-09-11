@@ -48,7 +48,7 @@ function printSchema(schema: JSONSchema, parentKey: string): string[] {
         .map((item, i) => {
           const code = printSchema(
             item,
-            lowerFirstCase(generateArrayItemName(i, [""]))
+            lowerFirstCase(generateArrayItemName(i, [""])),
           );
           return code;
         })
@@ -86,7 +86,7 @@ export function buildExampleCode(
     rootKey: string;
     language: "ts" | "js";
     lifetimes: ConverterLifetimes;
-  }> = {}
+  }> = {},
 ) {
   const { rootKey = DEFAULT_ROOT_KEY, language = "ts", lifetimes } = options;
   const exampleCode = printSchema(schema, "resp").map((line) => {
@@ -126,14 +126,14 @@ export function buildGolangExampleCode(
     rootKey: string;
     language: "ts" | "js";
     lifetimes: ConverterLifetimes;
-  }> = {}
+  }> = {},
 ) {
   return jsonSchemaToGoStruct(schema, "GeneratedStruct");
 }
 
 function jsonSchemaToGoStruct(
   schema: JSONSchema,
-  structName = "GeneratedStruct"
+  structName = "GeneratedStruct",
 ) {
   // console.log(schema);
   // let go_code = `type ${structName} struct {\n`;
@@ -182,7 +182,7 @@ function mapType(
   schema: JSONSchema,
   name = "",
   indent = 0,
-  lines: string[]
+  lines: string[],
   // callback: (v: string[]) => void
 ): string {
   // if (schema.$ref) {
@@ -209,7 +209,18 @@ function mapType(
     case "array":
       // lines.unshift(`[]${mapType(schema.items, name, indent + 1, lines)}`);
       // return "";
-      return `[]${mapType(key, schema.items, name, indent + 1, lines)}`;
+      return `[]${mapType(
+        key,
+        (() => {
+          if (Array.isArray(schema.items)) {
+            return schema.items[0];
+          }
+          return schema.items;
+        })(),
+        name,
+        indent + 1,
+        lines,
+      )}`;
     case "object":
       if (schema.properties) {
         const keys = Object.keys(schema.properties);
@@ -220,7 +231,7 @@ function mapType(
             schema.properties[k],
             struct_name,
             indent + 1,
-            lines
+            lines,
           );
           const fixed_struct_name = (() => {
             // 本来是想去掉表示复数的 s 结尾，但是会有 Status 这种单词，去掉就完全错误了
@@ -253,6 +264,6 @@ function mapType(
 
 function toPascalCase(str: string) {
   return str.replace(/(^\w|_\w)/g, (match) =>
-    match.replace(/_/, "").toUpperCase()
+    match.replace(/_/, "").toUpperCase(),
   );
 }

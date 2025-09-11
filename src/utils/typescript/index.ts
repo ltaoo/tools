@@ -54,7 +54,7 @@ export type JSONSchema = MutableRecord<{
   };
   [JSONSchemaTypes.Array]: {
     /** 元素 */
-    items: JSONSchema;
+    items: JSONSchema | JSONSchema[];
     /** 标题 */
     title?: string;
     /** 描述(相比标题可以更长，但作用是相同的) */
@@ -97,7 +97,7 @@ export type TypeNodePlugin = (
   {}: Partial<{
     deep: number;
     parentKeys: string[];
-  }>
+  }>,
 ) => string;
 /**
  * 从 json schema 构建 interface，但是返回的是数组，每一个元素是一行内容
@@ -109,7 +109,7 @@ export function buildInterfaceLines(
   schema: JSONSchema,
   parentKeys: string[] = [DEFAULT_ROOT_KEY],
   deep: number = 0,
-  options: Partial<ConverterLifetimes> = {}
+  options: Partial<ConverterLifetimes> = {},
 ): string | string[] {
   const { type } = schema;
   const { typeNode } = options;
@@ -122,7 +122,7 @@ export function buildInterfaceLines(
         property,
         parentKeys.concat(key),
         propertyDeep,
-        options
+        options,
       );
       const comments = buildCommentFromDescription(property.description);
       let keyAndValue: string | string[] = `${key}: ${value}`;
@@ -187,7 +187,7 @@ export function buildInterfaceLines(
       items,
       parentKeys,
       nextDeep,
-      options
+      options,
     );
     if (Array.isArray(originalLines)) {
       return addStrAtEndOfArrayItem(originalLines, "[]");
@@ -215,7 +215,7 @@ function addStrAtEndOfArrayItem(arr: string[], str: string) {
 export function jsonSchema2Interface(
   schema: JSONSchema,
   parentKeys: string[] = [DEFAULT_ROOT_KEY],
-  options: Partial<ConverterLifetimes> = {}
+  options: Partial<ConverterLifetimes> = {},
 ): string {
   const { typeNode, beforeOutput = () => [], afterOutput = () => [] } = options;
   const result = buildInterfaceLines(schema, parentKeys, 0, {
@@ -248,7 +248,7 @@ export function buildJSDocLines(
   schema: JSONSchema,
   parentKeys: string[] = ["ResponseRoot"],
   deep: number = 0,
-  options: Partial<ConverterLifetimes> = {}
+  options: Partial<ConverterLifetimes> = {},
 ): string | string[] {
   const { type } = schema;
   if (type === JSONSchemaTypes.Object) {
@@ -262,7 +262,7 @@ export function buildJSDocLines(
           property,
           parentKeys.concat([key]),
           deep + 1,
-          options
+          options,
         );
         // console.log("[](jsonSchema2JSDoc) - created property", key, value);
         // 如果是数组，说明返回的是一个对象/数组的声明
@@ -313,7 +313,7 @@ export function buildJSDocLines(
         const lines = buildJSDocLines(
           item,
           [generateArrayItemName(i, parentKeys)],
-          deep + 1
+          deep + 1,
         );
         if (Array.isArray(lines) && lines[0] === "Object") {
           extraJSDocLines.push(...lines.slice(2));
@@ -327,7 +327,7 @@ export function buildJSDocLines(
       items,
       [generateArrayItemName(0, parentKeys)],
       deep + 1,
-      options
+      options,
     );
     // console.log("[]() same type in array, so the value is", value);
     if (Array.isArray(value)) {
@@ -357,7 +357,7 @@ export function jsonSchema2JSDoc(
   schema: JSONSchema,
   parentKeys: string[] = [DEFAULT_ROOT_KEY],
   /** 额外配置 */
-  options: Partial<ConverterLifetimes> = {}
+  options: Partial<ConverterLifetimes> = {},
 ) {
   const { typeNode, beforeOutput = () => [], afterOutput = () => [] } = options;
   extraJSDocLines = [];
@@ -461,7 +461,7 @@ export function lowerFirstCase(key: string) {
  */
 export function json2Interface(
   jsonStr: string,
-  options: Partial<{ rootKey: string; plugin: ConverterLifetimes }>
+  options: Partial<{ rootKey: string; plugin: ConverterLifetimes }>,
 ) {
   const ast = parse(jsonStr);
   const schema = toJSONSchema(ast);
@@ -475,7 +475,7 @@ export function json2Interface(
  */
 export function json2JSDoc(
   jsonStr: string,
-  options: Partial<{ rootKey: string; plugin: ConverterLifetimes }>
+  options: Partial<{ rootKey: string; plugin: ConverterLifetimes }>,
 ) {
   const ast = parse(jsonStr);
   const schema = toJSONSchema(ast);
