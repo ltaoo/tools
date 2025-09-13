@@ -10,11 +10,14 @@ import utf8 from "utf8";
 import message from "antd/es/message";
 import "antd/es/message/style/index";
 
+import { convertToDataURL } from "./util";
+
 const Base64ParsePage = () => {
   const [value1, setValue1] = useState("");
   const [value2, setValue2] = useState("");
   const [result1, setResult1] = useState({ type: "text", value: "" });
   const [result2, setResult2] = useState({ type: "text", value: "" });
+  const [result3, setResult3] = useState({ type: "text", value: "" });
 
   const decode = () => {
     if (value1.startsWith("data:image")) {
@@ -38,7 +41,17 @@ const Base64ParsePage = () => {
       type: "text",
       value: encoded,
     });
+    generateDataURL(value2);
   };
+  async function generateDataURL(source: unknown) {
+    const r = await convertToDataURL(source, "image/png", 1);
+    setResult3((prev) => {
+      return {
+        ...prev,
+        value: r,
+      };
+    });
+  }
 
   return (
     <div className="container m-auto space-y-6">
@@ -142,6 +155,7 @@ const Base64ParsePage = () => {
                   if (!file) {
                     return;
                   }
+                  convertToDataURL(file, "image/png", 1);
                   const reader = new FileReader();
                   reader.onload = (e) => {
                     const base64String = e.target!.result;
@@ -177,6 +191,20 @@ const Base64ParsePage = () => {
               }}
             >
               <div className="break-all">{result2.value}</div>
+            </div>
+          </div>
+          <div className="flex-1 mt-8">
+            <div>
+              <p>DataURL</p>
+            </div>
+            <div
+              className="matches min-h-24 max-h-78 overflow-y-auto mt-2 py-2 px-4 space-y-2 bg-gray-100 rounded"
+              onClick={() => {
+                copy(result3.value);
+                message.success("复制成功");
+              }}
+            >
+              <div className="break-all">{result3.value}</div>
             </div>
           </div>
         </div>
