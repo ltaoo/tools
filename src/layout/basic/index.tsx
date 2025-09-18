@@ -1,44 +1,29 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
+import cn from "classnames";
 
 import { useMenus } from "@/hooks/menus";
 
 const BasicLayout = () => {
-  const navigate = useNavigate();
   const location = useLocation();
-  const ref = useRef<HTMLDivElement>(null);
   const links = useMenus();
 
-  // console.log(location);
-  useEffect(() => {
-    // document.addEventListener("copy", (event) => {
-    // const clipboardData = event.clipboardData;
-    // if (!clipboardData) {
-    //   return;
-    // }
-    // let text = window.getSelection().toString();
-    // console.log('before set data', text);
-    // text = "***微拍堂敏感信息禁止复制***";
-    // event.preventDefault();
-    // clipboardData.setData("text/plain", `${text}`);
-    // });
-    // if (ref.current) {
-    //   ref.current.addEventListener("copy", (event) => {
-    //     event.stopPropagation();
-    //   });
-    // }
-  }, []);
-
   return (
-    <div className="flex flex-col h-full p-4 overflow-hidden">
-      <div className="relative flex justify-between h-full">
-        <div className="h-full p-4 bg-gray-100 space-y-2">
+    <div className="flex flex-col w-screen h-screen overflow-hidden">
+      <div className="relative flex justify-between w-full h-full">
+        <div className="w-[228px] h-full p-4 bg-gray-100 space-y-1">
           {links.map((link) => {
             const { name, to } = link;
             return (
               <Link
                 key={to}
-                className="block py-2 px-2 text-gray-800 rounded cursor-pointer no-underline hover:bg-gray-300"
+                className={cn(
+                  "block py-2 px-4 text-gray-800 rounded cursor-pointer no-underline",
+                  {
+                    "hover:bg-gray-200": to !== location.pathname,
+                    "bg-gray-300": to === location.pathname,
+                  },
+                )}
                 to={to}
               >
                 {name}
@@ -46,8 +31,10 @@ const BasicLayout = () => {
             );
           })}
         </div>
-        <div className="flex-1 w-full ml-8 overflow-auto">
-          <Outlet />
+        <div className="flex-1 w-0 h-full overflow-y-auto">
+          <div className="p-4">
+            <Outlet />
+          </div>
         </div>
       </div>
     </div>

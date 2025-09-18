@@ -37,6 +37,9 @@ importers:
       fabricjs-react:
         specifier: ^2.1.0
         version: 2.1.0(fabric@6.7.1)(react-dom@17.0.2(react@17.0.2))(react@17.0.2)
+      file-saver:
+        specifier: ^2.0.5
+        version: 2.0.5
       mitt:
         specifier: ^3.0.1
         version: 3.0.1
@@ -62,6 +65,9 @@ importers:
         specifier: ^3.0.0
         version: 3.0.0
     devDependencies:
+      "@types/file-saver":
+        specifier: ^2.0.7
+        version: 2.0.7
       "@types/node":
         specifier: ^17.0.23
         version: 17.0.45
@@ -812,6 +818,12 @@ packages:
     resolution:
       {
         integrity: sha512-/pC9HAB5I/xMlc5FP77qjCnI16ChlJfW0tGa0IUcFn38VJrTV6DeZ60NU5KZBtaOZqjdpwTWohz5HU1RrhiYxQ==,
+      }
+
+  "@types/file-saver@2.0.7":
+    resolution:
+      {
+        integrity: sha512-dNKVfHd/jk0SkR/exKGj2ggkB45MAkzvWCaqLUUgkyjITkGNzH8H+yUwr+BLJUBjZOe9w8X3wgmXhZDRg1ED6A==,
       }
 
   "@types/node@17.0.45":
@@ -1740,6 +1752,12 @@ packages:
     resolution:
       {
         integrity: sha512-QKHXPW0hD8g4UET03SdOdunzSouc9N4AuHdsX8XNcTsuz+yYFILVNIX4l9yHABMhiEI9Db0JTTIpu0wB+Y1QQw==,
+      }
+
+  file-saver@2.0.5:
+    resolution:
+      {
+        integrity: sha512-P9bmyZ3h/PRG+Nzga+rbdI4OEpNDzAVyy74uVO9ATgzLK6VtAsYybF/+TOCvrc0MO793d6+42lLyZTw7/ArVzA==,
       }
 
   fill-range@7.1.1:
@@ -4083,6 +4101,8 @@ snapshots:
 
   "@types/chai@4.3.20": {}
 
+  "@types/file-saver@2.0.7": {}
+
   "@types/node@17.0.45": {}
 
   "@types/prop-types@15.7.14": {}
@@ -4654,6 +4674,8 @@ snapshots:
   fastq@1.18.0:
     dependencies:
       reusify: 1.0.4
+
+  file-saver@2.0.5: {}
 
   fill-range@7.1.1:
     dependencies:

@@ -9,10 +9,12 @@ const RegexpChallengePage = React.lazy(
   () => import("@/pages/regexp-challenge"),
 );
 const RegexpBuildPage = React.lazy(() => import("@/pages/regexp-build"));
-const BookSourceBuildPage = React.lazy(() => import("@/pages/book-source"));
 const ImageCreatePage = React.lazy(() => import("@/pages/create-img"));
+const TextFileCreatePage = React.lazy(() => import("@/pages/create-text-file"));
+// const BookSourceBuildPage = React.lazy(() => import("@/pages/book-source"));
 const StructConverterPage = React.lazy(() => import("@/pages/struct"));
 const URLSearchParsePage = React.lazy(() => import("@/pages/query"));
+const CookieParsePage = React.lazy(() => import("@/pages/cookie"));
 const WifiQRCodePage = React.lazy(() => import("@/pages/wifi"));
 const Base64ParsePage = React.lazy(() => import("@/pages/base64"));
 const TextIndexesPage = React.lazy(() => import("@/pages/text-indexes"));
@@ -49,34 +51,30 @@ export function useMenus() {
       to: "/dayjs",
       page: DayjsTestPage,
     },
-    // {
-    //   name: "JavaScript 测试",
-    //   to: "/repl",
-    // },
     {
-      name: "测试图片在线生成",
+      name: "测试图片生成",
       to: "/img-create",
       page: ImageCreatePage,
     },
     {
-      name: "书源制作",
-      to: "/book-source",
-      page: BookSourceBuildPage,
+      name: "文本文件生成",
+      to: "/file-create",
+      page: TextFileCreatePage,
     },
+    // {
+    //   name: "书源制作",
+    //   to: "/book-source",
+    //   page: BookSourceBuildPage,
+    // },
     {
       name: "数据结构转换",
       to: "/struct-convert",
       page: StructConverterPage,
     },
     {
-      name: "Curl 解析",
-      to: "/curl-parse",
-      page: CurlParsePage,
-    },
-    {
-      name: "Whistle Mock",
-      to: "/whistle-mock",
-      page: WhistleMockPage,
+      name: "Base64 解析",
+      to: "/base64",
+      page: Base64ParsePage,
     },
     {
       name: "URL search 解析",
@@ -84,14 +82,24 @@ export function useMenus() {
       page: URLSearchParsePage,
     },
     {
+      name: "Cookie 解析",
+      to: "/cookie",
+      page: CookieParsePage,
+    },
+    {
+      name: "Curl 解析",
+      to: "/curl-parse",
+      page: CurlParsePage,
+    },
+    {
       name: "WechatXML 解析",
       to: "/wechat-xml",
       page: WechatXMLParserPage,
     },
     {
-      name: "Base64",
-      to: "/base64",
-      page: Base64ParsePage,
+      name: "Whistle Mock",
+      to: "/whistle-mock",
+      page: WhistleMockPage,
     },
     {
       name: "wifi 二维码",

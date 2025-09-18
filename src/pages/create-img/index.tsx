@@ -105,6 +105,7 @@ const CreateImgPage = () => {
       return;
     }
     ctxRef.current = ctx;
+    renderPreview();
   }, []);
 
   const renderPreview = useCallback(() => {
@@ -207,7 +208,7 @@ const CreateImgPage = () => {
           下载
         </button>
       </div>
-      <div className="mt-12">
+      <div className="mt-8">
         <div className="w-120">
           <canvas
             className="w-full"
