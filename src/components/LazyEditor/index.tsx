@@ -1,7 +1,7 @@
 /**
  * @file 使用 requirejs 加载包含最新版 typescript 的 monaco-editor 编辑器
  */
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useImperativeHandle, useRef, useState } from "react";
 import type * as monaco from "monaco-editor";
 
 import { loadScript } from "@/utils/index";
@@ -12,23 +12,34 @@ interface IEditorProps {
   language?: string;
   onChange?: (value: string) => void;
   onSave?: (value?: string) => void;
+  markers?: monaco.editor.IMarkerData[];
 }
-const LazyEditor: React.FC<IEditorProps> = (props) => {
+const LazyEditor = React.forwardRef((props: IEditorProps, ref) => {
   const {
     defaultValue,
     value,
     language = "typescript",
     onChange,
     onSave,
+    markers,
   } = props;
 
   const onChangeRef = useRef(onChange);
   const onSaveRef = useRef(onSave);
   const editorRef = useRef<HTMLDivElement | null>(null);
   const insRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
+  const monacoRef = useRef<typeof monaco | null>(null);
   const [loading, setLoading] = useState(true);
   const languageRef = useRef(language);
   const vRef = useRef(value || defaultValue);
+
+  useImperativeHandle(ref, () => ({
+    getValue: () => insRef.current?.getValue(),
+    setValue: (v: string) => {
+      vRef.current = v;
+      insRef.current?.setValue(v);
+    },
+  }));
 
   useEffect(() => {
     (async () => {
@@ -37,7 +48,7 @@ const LazyEditor: React.FC<IEditorProps> = (props) => {
       }
       await loadScript(
         // "https://cdn.bootcdn.net/ajax/libs/require.js/2.3.6/require.js"
-        "https://static.funzm.com/assets/libs/require.js/2.3.6/require.js"
+        "https://static.funzm.com/assets/libs/require.js/2.3.6/require.js",
       );
       // @ts-ignore
       if (window.requirejs === undefined) {
@@ -60,6 +71,7 @@ const LazyEditor: React.FC<IEditorProps> = (props) => {
         ["vs/editor/editor.main", "vs/language/typescript/tsWorker"],
         // @ts-ignore
         (monaco, ts) => {
+          monacoRef.current = monaco;
           // console.log("loaded modules", monaco, ts, window.ts, vRef.current);
           const editor = monaco.editor.create(editorRef.current, {
             text: vRef.current,
@@ -85,6 +97,12 @@ const LazyEditor: React.FC<IEditorProps> = (props) => {
               enabled: true,
             },
           });
+          editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
+            const v = editor.getValue();
+            if (onSaveRef.current) {
+              onSaveRef.current(v);
+            }
+          });
           const model = editor.getModel();
           model?.onDidChangeContent(() => {
             if (onChangeRef.current) {
@@ -97,9 +115,21 @@ const LazyEditor: React.FC<IEditorProps> = (props) => {
         },
         () => {
           alert("loaded modules failed");
-        }
+        },
       );
     })();
+  }, []);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
+        e.preventDefault();
+      }
+    };
+    window.addEventListener("keydown", handler, true);
+    return () => {
+      window.removeEventListener("keydown", handler, true);
+    };
   }, []);
 
   useEffect(() => {
@@ -122,14 +152,24 @@ const LazyEditor: React.FC<IEditorProps> = (props) => {
 
   useEffect(() => {
     if (onChange && onChange !== onChangeRef.current) {
-      onChangeRef.current === onChange;
+      onChangeRef.current = onChange;
     }
   }, [onChange]);
   useEffect(() => {
     if (onSave && onSave !== onSaveRef.current) {
-      onSaveRef.current === onSave;
+      onSaveRef.current = onSave;
     }
   }, [onSave]);
+
+  useEffect(() => {
+    if (!monacoRef.current || !insRef.current) {
+      return;
+    }
+    const model = insRef.current.getModel();
+    if (model) {
+      monacoRef.current.editor.setModelMarkers(model, "owner", markers || []);
+    }
+  }, [markers, loading]);
 
   return (
     <div>
@@ -137,6 +177,6 @@ const LazyEditor: React.FC<IEditorProps> = (props) => {
       <div ref={editorRef} className="h-120 border border-1" />
     </div>
   );
-};
+});
 
 export default LazyEditor;

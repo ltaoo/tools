@@ -7,17 +7,14 @@ import { Tab } from "@headlessui/react";
 import copy from "copy-to-clipboard";
 import message from "antd/es/message";
 import "antd/es/message/style/index";
+import type * as monaco from "monaco-editor";
 
 import { parse } from "@/utils/json/ast";
 import { useHistoryRecords, useValue } from "@/hooks";
 import LazyEditor from "@/components/LazyEditor";
 import { toJSONSchema } from "@/utils/json";
-import {
-  json2Interface,
-  json2JSDoc,
-  jsonSchema2Interface,
-  jsonSchema2JSDoc,
-} from "@/utils/typescript";
+import { json2Interface, json2JSDoc } from "@/utils/typescript";
+import { formatJSON } from "@/utils/json/format";
 import {
   buildExampleCode,
   buildGolangExampleCode,
@@ -25,6 +22,7 @@ import {
 import { jsEnumPlugin, tsEnumPlugin } from "@/utils/typescript/plugins/enum";
 
 const ReplPage = () => {
+  const refEditor = useRef<{ setValue: (v: string) => void } | null>(null);
   const [code, setCode] = useValue(
     (() => {
       const cachedCode = localStorage.getItem("struct") || "";
@@ -34,7 +32,7 @@ const ReplPage = () => {
       onChange: (v) => {
         localStorage.setItem("struct", v);
       },
-    }
+    },
   );
   const [records, recordManage] = useHistoryRecords("struct-page");
   const codeRef = useRef(code);
@@ -44,22 +42,30 @@ const ReplPage = () => {
   const [rTSInterface, setInterfaceStr] = useState("");
   const [rJSDoc, setJSDocStr] = useState("");
   const [rGolangStruct, setGolangStr] = useState("");
+  const [markers, setMarkers] = useState<monaco.editor.IMarkerData[]>([]);
 
+  function formatCode(codeString: string) {
+    const code = formatJSON(codeString);
+    refEditor.current?.setValue(code);
+    return code;
+  }
   const convert = useCallback((codeString) => {
     if (!codeString) {
       return;
     }
+    const code = formatCode(codeString);
+    setMarkers([]);
     try {
       const regexp = /([0-9a-z]{1,})[：:]{1}([^;；]{1,})[;；]{1}/;
       const tsLifetimes = tsEnumPlugin(regexp);
       const jsLifetimes = jsEnumPlugin(regexp);
-      refTSInterface.current = json2Interface(codeString, {
+      refTSInterface.current = json2Interface(code, {
         plugin: tsLifetimes,
       });
-      refJSDoc.current = json2JSDoc(codeString, {
+      refJSDoc.current = json2JSDoc(code, {
         plugin: jsLifetimes,
       });
-      const ast = parse(codeString);
+      const ast = parse(code);
       const schema = toJSONSchema(ast);
       const interStr = buildExampleCode(schema, {
         language: "ts",
@@ -76,10 +82,20 @@ const ReplPage = () => {
         lifetimes: tsLifetimes,
       });
       setGolangStr(golangStr);
-    } catch (err) {
-      console.log(err);
-      // @ts-ignore
-      alert(err.message);
+    } catch (err: any) {
+      console.log(err, err.lineNumber);
+      if (err.lineNumber) {
+        setMarkers([
+          {
+            startLineNumber: err.lineNumber,
+            startColumn: err.columnNumber,
+            endLineNumber: err.lineNumber,
+            endColumn: err.columnNumber + 1,
+            message: err.message,
+            severity: 8,
+          },
+        ]);
+      }
     }
   }, []);
 
@@ -181,11 +197,17 @@ const ReplPage = () => {
       <h1 className="text-3xl font-bold">Struct Converter</h1>
       <div className="mt-6">
         <LazyEditor
+          ref={refEditor}
           value={code as string}
           language="json5"
-          onChange={(nextCode) => {
-            codeRef.current = nextCode;
-            localStorage.setItem("struct", nextCode);
+          markers={markers}
+          onSave={() => {
+            formatCode(code);
+          }}
+          onChange={(v) => {
+            codeRef.current = v;
+            localStorage.setItem("struct", v);
+            setMarkers([]);
           }}
         />
         <div className="mt-4">
@@ -220,7 +242,7 @@ const ReplPage = () => {
                       "focus:outline-none",
                       selected
                         ? "bg-white text-black shadow"
-                        : "text-white hover:bg-white/[0.12] hover:text-white"
+                        : "text-white hover:bg-white/[0.12] hover:text-white",
                     )
                   }
                 >
