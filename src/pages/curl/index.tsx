@@ -1094,6 +1094,46 @@ const CurlParsePage = () => {
                   </table>
                 </div>
               </div>
+              <div className="p-2">
+                <div className="flex items-center space-x-2">
+                  <div className="text-xl">Headers (YAML)</div>
+                  <button
+                    className="py-0.5 px-2 text-xs rounded bg-gray-200 text-gray-700"
+                    onClick={() => {
+                      const lines = state.data.headers.map(
+                        (v) => `${v.key}: "${v.value.replace(/"/g, '\\"')}"`,
+                      );
+                      if (state.data.cookies.length > 0) {
+                        const cookieValue = state.data.cookies
+                          .map((v) => `${v.name}=${v.value}`)
+                          .join("; ");
+                        lines.push(
+                          `Cookie: "${cookieValue.replace(/"/g, '\\"')}"`,
+                        );
+                      }
+                      navigator.clipboard.writeText(lines.join("\n"));
+                    }}
+                  >
+                    复制
+                  </button>
+                </div>
+                <pre className="ml-4 mt-2 p-3 bg-gray-50 rounded text-sm overflow-x-auto whitespace-pre-wrap break-all">
+                  {(() => {
+                    const lines = state.data.headers.map(
+                      (v) => `${v.key}: "${v.value.replace(/"/g, '\\"')}"`,
+                    );
+                    if (state.data.cookies.length > 0) {
+                      const cookieValue = state.data.cookies
+                        .map((v) => `${v.name}=${v.value}`)
+                        .join("; ");
+                      lines.push(
+                        `Cookie: "${cookieValue.replace(/"/g, '\\"')}"`,
+                      );
+                    }
+                    return lines.join("\n");
+                  })()}
+                </pre>
+              </div>
             </div>
           ) : null}
           {/* <div className="flex space-x-2">

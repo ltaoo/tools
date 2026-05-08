@@ -27,12 +27,31 @@ const Base64ParsePage = () => {
       });
       return;
     }
-    const bytes = base64.decode(value1);
-    const text = utf8.decode(bytes);
-    setResult1({
-      type: "text",
-      value: text,
-    });
+    try {
+      const bytes = base64.decode(value1);
+      const text = utf8.decode(bytes);
+      setResult1({
+        type: "text",
+        value: text,
+      });
+    } catch {
+      // 解码失败，尝试添加 image/png 前缀作为图片解码
+      try {
+        const dataURL = `data:image/png;base64,${value1}`;
+        // 验证 base64 是否有效
+        atob(value1);
+        setResult1({
+          type: "img",
+          value: dataURL,
+        });
+      } catch {
+        message.error("解码失败：输入内容不是有效的 Base64 编码");
+        setResult1({
+          type: "text",
+          value: "",
+        });
+      }
+    }
   };
   const encode = () => {
     const bytes = utf8.encode(value2);
