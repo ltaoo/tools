@@ -21,6 +21,7 @@ const TextIndexesPage = React.lazy(() => import("@/pages/text-indexes"));
 const CurlParsePage = React.lazy(() => import("@/pages/curl"));
 const WechatXMLParserPage = React.lazy(() => import("@/pages/wechat_xml"));
 const WhistleMockPage = React.lazy(() => import("@/pages/whistle_mock"));
+const NumberChinesePage = React.lazy(() => import("@/pages/number-chinese"));
 
 export function useMenus() {
   return [
@@ -110,6 +111,11 @@ export function useMenus() {
       name: "文本下标",
       to: "/text-indexes",
       page: TextIndexesPage,
+    },
+    {
+      name: "数值转换",
+      to: "/number-chinese",
+      page: NumberChinesePage,
     },
   ];
 }

@@ -46,10 +46,7 @@ const LazyEditor = React.forwardRef((props: IEditorProps, ref) => {
       if (insRef.current !== null) {
         return;
       }
-      await loadScript(
-        // "https://cdn.bootcdn.net/ajax/libs/require.js/2.3.6/require.js"
-        "https://static.funzm.com/assets/libs/require.js/2.3.6/require.js",
-      );
+      await loadScript("/require.js/2.3.6/require.js");
       // @ts-ignore
       if (window.requirejs === undefined) {
         return;
@@ -61,7 +58,7 @@ const LazyEditor = React.forwardRef((props: IEditorProps, ref) => {
       // @ts-ignore
       requirejs.config({
         paths: {
-          vs: "https://static.funzm.com/assets/monaco/4.9.4/min/vs",
+          vs: "/monaco-editor/4.9.4/min/vs",
         },
         ignoreDuplicateModules: ["vs/editor/editor.main"],
       });
