@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TXT 章节编辑器</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div id="dropOverlay" class="drop-overlay" aria-hidden="true">
+      <div class="drop-card">
+        <strong>松开导入 TXT</strong>
+        <span>文件会在浏览器本地解析，不上传到服务器</span>
+      </div>
+    </div>
+
+    <main class="app-shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <h1>TXT 编辑器</h1>
+          <span id="chapterCount">0 项</span>
+        </div>
+
+        <div class="import-panel">
+          <label class="file-picker">
+            <input id="fileInput" type="file" accept=".txt,text/plain" />
+            <span>导入 TXT</span>
+          </label>
+          <button id="rulesButton" type="button">标题规则</button>
+        </div>
+
+        <div class="search-box">
+          <input
+            id="tocSearch"
+            type="search"
+            placeholder="搜索章节"
+            autocomplete="off"
+          />
+        </div>
+
+        <nav id="tocList" class="toc-list" aria-label="章节目录"></nav>
+      </aside>
+
+      <section class="workspace">
+        <header class="toolbar">
+          <div class="meta">
+            <strong id="fileName">未载入文件</strong>
+            <span id="totalWordCount">总字数：0 字</span>
+            <span id="statusText">导入 TXT 后自动解析目录</span>
+          </div>
+          <div class="actions">
+            <button id="parseButton" type="button">重新解析</button>
+            <button id="saveButton" type="button">本地保存</button>
+            <button id="exportButton" type="button">导出 TXT</button>
+          </div>
+        </header>
+
+        <section class="chapter-pane" aria-label="当前章节">
+          <div class="pane-head">
+            <input
+              id="currentChapterTitle"
+              class="chapter-title-input"
+              type="text"
+              value="当前章节"
+              aria-label="章节标题"
+              disabled
+            />
+            <div class="chapter-source-actions">
+              <small id="currentChapterRange">未选择</small>
+              <button id="viewSourceButton" type="button" disabled>
+                查看原文
+              </button>
+            </div>
+          </div>
+          <textarea
+            id="chapterEditor"
+            spellcheck="false"
+            placeholder="导入 TXT 后，从左侧目录选择章节进行编辑。"
+          ></textarea>
+        </section>
+      </section>
+    </main>
+
+    <dialog id="sourceDialog" class="source-dialog">
+      <form method="dialog" class="source-panel">
+        <header class="source-head">
+          <div>
+            <strong id="sourceDialogTitle">原文</strong>
+            <span id="sourceDialogRange">未选择</span>
+          </div>
+          <button id="closeSourceButton" type="button" aria-label="关闭">
+            关闭
+          </button>
+        </header>
+        <textarea
+          id="sourceViewer"
+          spellcheck="false"
+          readonly
+          aria-label="原文内容"
+        ></textarea>
+      </form>
+    </dialog>
+
+    <dialog id="rulesDialog" class="rules-dialog">
+      <form method="dialog" class="rules-panel">
+        <header class="rules-head">
+          <div>
+            <strong>标题规则</strong>
+            <span>内置规则不可删除，手动规则会保存在本地浏览器。</span>
+          </div>
+          <button id="closeRulesButton" type="button" aria-label="关闭">
+            关闭
+          </button>
+        </header>
+
+        <section class="rules-section">
+          <h2>现有解析规则</h2>
+          <div id="rulesList" class="rules-list"></div>
+        </section>
+
+        <section class="rules-section">
+          <h2>添加解析规则</h2>
+          <div class="rule-form">
+            <label>
+              <span>规则名称</span>
+              <input
+                id="ruleNameInput"
+                type="text"
+                placeholder="例如：序章标题"
+              />
+            </label>
+            <label>
+              <span>类型</span>
+              <input id="ruleTypeInput" type="text" value="章" />
+            </label>
+            <label>
+              <span>层级</span>
+              <select id="ruleLevelInput">
+                <option value="1">1</option>
+                <option value="2" selected>2</option>
+                <option value="3">3</option>
+              </select>
+            </label>
+            <label class="rule-pattern-field">
+              <span>正则表达式</span>
+              <input
+                id="rulePatternInput"
+                type="text"
+                placeholder="^\\s*((?:序章|楔子)[^\\n\\r]{0,80})\\s*$"
+              />
+            </label>
+            <label class="rule-check">
+              <input id="ruleBlankInput" type="checkbox" />
+              <span>要求标题前后为空行</span>
+            </label>
+            <button id="addRuleButton" type="button">添加规则</button>
+          </div>
+          <p id="ruleError" class="rule-error" role="alert"></p>
+        </section>
+      </form>
+    </dialog>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
