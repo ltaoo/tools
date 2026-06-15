@@ -262,6 +262,45 @@ function print(resp: ResponseRoot) {
 }`);
   });
 
+  test("非法标识符 key 会生成合法的 ts 示例代码", () => {
+    const schema = {
+      type: JSONSchemaTypes.Object,
+      properties: {
+        "/abc/efg": {
+          type: JSONSchemaTypes.Object,
+          properties: {
+            "child-key": {
+              type: JSONSchemaTypes.String,
+            },
+          },
+        },
+        normal: {
+          type: JSONSchemaTypes.String,
+        },
+      },
+    } as JSONSchema;
+
+    const result = buildExampleCode(schema, {
+      language: "ts",
+      rootKey: "ResponseRoot",
+    });
+
+    expect(result).toBe(`interface ResponseRoot {
+  "/abc/efg": {
+    "child-key": string;
+  };
+  normal: string;
+}
+
+/**
+ * @param resp
+ */
+function print(resp: ResponseRoot) {
+  const { "/abc/efg": abcEfg, normal } = resp;
+  const { "child-key": childKey } = abcEfg;
+}`);
+  });
+
   test("数组包含各种数据结构", () => {
     const schema = {
       type: JSONSchemaTypes.Object,

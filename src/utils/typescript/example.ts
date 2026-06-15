@@ -1,5 +1,6 @@
 import {
   ConverterLifetimes,
+  formatTypescriptPropertyKey,
   generateArrayItemName,
   generateWhitespace,
   JSONSchema,
@@ -8,34 +9,94 @@ import {
   JSONSchemaTypes,
   lowerFirstCase,
   TypeNodePlugin,
+  upperFirstCase,
 } from ".";
 import { DEFAULT_ROOT_KEY } from "./constants";
+
+const TYPESCRIPT_VARIABLE_IDENTIFIER_REGEXP = /^[A-Za-z_$][A-Za-z0-9_$]*$/;
+
+function buildIdentifierFromKey(key: string) {
+  if (TYPESCRIPT_VARIABLE_IDENTIFIER_REGEXP.test(key)) {
+    return key;
+  }
+  const words = key.split(/[^A-Za-z0-9_$]+/).filter(Boolean);
+  const candidate = words
+    .map((word, index) => {
+      if (index === 0) {
+        return lowerFirstCase(word);
+      }
+      return upperFirstCase(word);
+    })
+    .join("");
+  const base = candidate || "value";
+  const variableName = /^[A-Za-z_$]/.test(base) ? base : `_${base}`;
+  if (TYPESCRIPT_VARIABLE_IDENTIFIER_REGEXP.test(variableName)) {
+    return variableName;
+  }
+  return "value";
+}
+
+function buildUniqueIdentifier(
+  identifier: string,
+  usedIdentifiers: Set<string>,
+) {
+  let nextIdentifier = identifier;
+  let count = 2;
+  while (usedIdentifiers.has(nextIdentifier)) {
+    nextIdentifier = `${identifier}${count}`;
+    count += 1;
+  }
+  usedIdentifiers.add(nextIdentifier);
+  return nextIdentifier;
+}
+
+function buildDestructuredProperties(keys: string[]) {
+  const usedIdentifiers = new Set<string>();
+  return keys.map((key) => {
+    const variableName = buildUniqueIdentifier(
+      buildIdentifierFromKey(key),
+      usedIdentifiers,
+    );
+    if (key === variableName) {
+      return {
+        code: key,
+        variableName,
+      };
+    }
+    return {
+      code: `${formatTypescriptPropertyKey(key)}: ${variableName}`,
+      variableName,
+    };
+  });
+}
 
 function printSchema(schema: JSONSchema, parentKey: string): string[] {
   // console.log('[]()printSchema', schema);
   const { type } = schema;
   if (type === JSONSchemaTypes.Object) {
     const { properties } = schema;
-    const extraLines = Object.keys(properties)
-      .map((key) => {
+    const keys = Object.keys(properties);
+    const destructuredProperties = buildDestructuredProperties(keys);
+    const extraLines = keys
+      .map((key, index) => {
         const child = properties[key];
-        return printSchema(child, key);
+        return printSchema(child, destructuredProperties[index].variableName);
       })
       .reduce((prev, cur) => {
         return prev.concat(cur);
       }, [] as string[]);
-    if (Object.keys(properties).length <= 5) {
-      const propertyKeys = Object.keys(properties)
-        .map((key) => {
-          return key;
+    if (keys.length <= 5) {
+      const propertyKeys = destructuredProperties
+        .map(({ code }) => {
+          return code;
         })
         .join(", ");
       const line = `const { ${propertyKeys} } = ${parentKey};`;
       //     console.log("[](printSchema) - lines of properties", line, extraLines);
       return [line].concat(extraLines);
     }
-    const propertyKeys = Object.keys(properties).map((key) => {
-      return `${generateWhitespace(1)}${key},`;
+    const propertyKeys = destructuredProperties.map(({ code }) => {
+      return `${generateWhitespace(1)}${code},`;
     });
     const line = ["const {", ...propertyKeys, `} = ${parentKey};`];
     //     console.log("[](printSchema) - lines of properties", line, extraLines);

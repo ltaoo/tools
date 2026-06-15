@@ -52,6 +52,32 @@ describe("生成 typescript interface", () => {
 }`);
   });
 
+  test("非法标识符 key 会生成字符串字面量属性名", () => {
+    const schema = {
+      type: "object",
+      properties: {
+        "/abc/efg": {
+          type: "string",
+        },
+        detail: {
+          type: "object",
+          properties: {
+            "foo-bar": {
+              type: "number",
+            },
+          },
+        },
+      },
+    };
+    const interfaceStr = jsonSchema2Interface(schema as JSONSchema);
+    expect(interfaceStr).toBe(`interface ResponseRoot {
+  "/abc/efg": string;
+  detail: {
+    "foo-bar": number;
+  };
+}`);
+  });
+
   test("存在深层数据", () => {
     const schema = {
       type: "object",
@@ -307,7 +333,7 @@ describe("生成 typescript interface", () => {
     const result = jsonSchema2Interface(
       schema,
       ["ResponseRoot"],
-      tsEnumPlugin(/([0-9a-z]{1,})：([^\(]{1,})\({0,1}([^\)]{1,})\){0,1}；/)
+      tsEnumPlugin(/([0-9a-z]{1,})：([^\(]{1,})\({0,1}([^\)]{1,})\){0,1}；/),
     );
     expect(result).toStrictEqual(`enum ResponseRootStatus {
   /** 在售 */
@@ -600,7 +626,7 @@ describe("生成 JSDoc", () => {
     const result = jsonSchema2JSDoc(
       schema,
       ["ResponseRoot"],
-      jsEnumPlugin(/([0-9a-z]{1,})：([^\(]{1,})\({0,1}([^\)]{1,})\){0,1}；/)
+      jsEnumPlugin(/([0-9a-z]{1,})：([^\(]{1,})\({0,1}([^\)]{1,})\){0,1}；/),
     );
     expect(result).toStrictEqual(`/** @enum {number} */
 const ResponseRootStatus = {

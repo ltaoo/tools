@@ -99,6 +99,16 @@ export type TypeNodePlugin = (
     parentKeys: string[];
   }>,
 ) => string;
+
+const TYPESCRIPT_PROPERTY_IDENTIFIER_REGEXP = /^[A-Za-z_$][A-Za-z0-9_$]*$/;
+
+export function formatTypescriptPropertyKey(key: string) {
+  if (TYPESCRIPT_PROPERTY_IDENTIFIER_REGEXP.test(key)) {
+    return key;
+  }
+  return JSON.stringify(key);
+}
+
 /**
  * 从 json schema 构建 interface，但是返回的是数组，每一个元素是一行内容
  * @param {JSONSchema} schema
@@ -117,6 +127,7 @@ export function buildInterfaceLines(
     const { properties } = schema;
     const propertySignatures = Object.keys(properties).map((key) => {
       const property = properties[key];
+      const propertyKey = formatTypescriptPropertyKey(key);
       const propertyDeep = deep + 1;
       let value = buildInterfaceLines(
         property,
@@ -125,9 +136,9 @@ export function buildInterfaceLines(
         options,
       );
       const comments = buildCommentFromDescription(property.description);
-      let keyAndValue: string | string[] = `${key}: ${value}`;
+      let keyAndValue: string | string[] = `${propertyKey}: ${value}`;
       if (Array.isArray(value)) {
-        keyAndValue = [`${key}: ${value[0]}`].concat(value.slice(1));
+        keyAndValue = [`${propertyKey}: ${value[0]}`].concat(value.slice(1));
       }
       const lines = Array.isArray(keyAndValue) ? keyAndValue : [keyAndValue];
       if (comments.length > 0) {
